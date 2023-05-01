@@ -5,6 +5,11 @@ import redact_text_w_openAI
 import dotenv
 import util
 import split_files
+import sys
+import threading
+from queue import Queue
+import time
+
 
 dotenv.load_dotenv()        
 apikey = os.getenv("OPENAI_API_KEY")
@@ -28,8 +33,18 @@ class MainForm(npyscreen.ActionForm):
         self.convert_button.whenPressed = self.on_convert
         self.redact_button = self.add(npyscreen.ButtonPress, name="Redact", hidden=True)
         self.redact_button.whenPressed = self.on_redact
-
+        self.realtime_output = self.add(RealtimeOutput, name="Output:")
+        self.periodic_update = True
+        threading.Thread(target=self.update_output).start()
+         
+    def update_output(self):
+        while self.periodic_update:
+            self.realtime_output.update_output()
+            time.sleep(0.1) 
+               
     def on_cancel(self):
+        self.periodic_update = False
+        self.parentApp.setNextForm(None)
         self.parentApp.setNextForm(None)
     
     def choose_input_file(self):
@@ -49,16 +64,17 @@ class MainForm(npyscreen.ActionForm):
             npyscreen.notify_confirm("Both input and output files must be specified.", title="Error")
             return
 
-        Whisper_convert.whisper_convert(input_file, output_file)        
+        self.conversion_thread = OutputThread(target=Whisper_convert.whisper_convert, args=(input_file, output_file))
+        self.conversion_thread.start()
+        #Whisper_convert.whisper_convert(input_file, output_file)        
         npyscreen.notify_confirm("Conversion complete!", title="Success")
         self.redact_button.hidden = False
         self.redact_button.update()
         self.display()
     
     def on_redact(self):
-        input_file = self.input_file.value
-        output_file = self.output_file.value
-
+        output_file = self.output_file_display.value
+        
         if not apikey:
             self.parentApp.setNextForm("MISSING_OPENAIAPIKEY")               
         text = ''        
@@ -69,6 +85,8 @@ class MainForm(npyscreen.ActionForm):
         for chunk in chunks:
             redacted_text_list.append(redact_text_w_openAI.call_openAi_redact(chunk, apikey))
         redacted_text = " ".join(redacted_text_list)
+        with open(str.join("redacted_",output_file), "w", encoding="utf-8") as file:
+	        file.write(redacted_text)
 
 class ChooseFileForm(npyscreen.ActionForm):
     def __init__(self, *args, mode='input', **kwargs):
@@ -136,11 +154,11 @@ class ChooseFileForm(npyscreen.ActionForm):
     def on_ok(self):
         selected_file = self.file_widget.value
         if self.mode == 'input':
-            if ChooseFileForm.validate_input_file(selected_file):
-                self.parentApp.getForm("MAIN").input_file = selected_file
-                self.parentApp.setNextForm("MAIN")
-                self.parentApp.getForm("MAIN").input_file_display.value = selected_file
-                self.parentApp.getForm("MAIN").input_file_display.update()
+            if ChooseFileForm.validate_input_file(selected_file) and ChooseFileForm.is_length_below_limit(selected_file):                    
+                    self.parentApp.getForm("MAIN").input_file = selected_file
+                    self.parentApp.setNextForm("MAIN")
+                    self.parentApp.getForm("MAIN").input_file_display.value = selected_file
+                    self.parentApp.getForm("MAIN").input_file_display.update()
             else:
                 self.parentApp.setNextForm("MISSING_FILE")
         elif self.mode == 'output':
@@ -168,6 +186,40 @@ class MissingOpenAiApiKey(npyscreen.ActionForm):
     def on_cancel(self):
         self.parentApp.setNextForm("MAIN")  
         #self.parentApp.switchFormNow()
+
+class RealtimeOutput(npyscreen.BoxTitle):
+    _contained_widget = npyscreen.Pager
+
+    def update(self, *args, **keywords):
+        super(RealtimeOutput, self).update(*args, **keywords)
+
+    def update_output(self):
+        while not output_queue.empty():
+            message = output_queue.get()
+            self.values.append(message)
+            self.display()
+
+output_queue = Queue()
+
+class OutputThread(threading.Thread):
+    def __init__(self, target, args):
+        super(OutputThread, self).__init__()
+        self.target = target
+        self.args = args
+
+    def run(self):
+        sys.stdout = CustomStdout()
+        self.target(*self.args)
+        sys.stdout = sys.__stdout__
+
+class CustomStdout:
+    def write(self, s):
+        if s != '\n':
+            output_queue.put(s)
+        sys.__stdout__.write(s)
+
+    def flush(self):
+        sys.__stdout__.flush()
 
      
 if __name__ == "__main__":

@@ -13,10 +13,7 @@ def whisper_convert(input_file: str, output_file: str):
     """
 
 	modelName = "large-v2"
-	#language = "hungarian"
 	model = whisper.load_model(modelName)
-	result = model.transcribe(audio=input_file, word_timestamps=False, verbose=False) #language=language, 
-	print("\nWriting transcription to file...")
+	result = model.transcribe(audio=input_file, word_timestamps=False, verbose=False)
 	with open(output_file, "w", encoding="utf-8") as file:
 		file.write(result["text"])
-	print("Finished writing transcription file.")
