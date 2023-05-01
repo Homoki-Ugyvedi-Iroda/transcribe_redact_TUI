@@ -32,7 +32,7 @@ def construct_prompt_chat_gpt(user_input):
     messages = [
         {
             "role": "system",
-            "content": "You are a tool AI helping to format, correct and redact long legal texts transcribed from speeches into text to be read by humans, and you receive the text in multiple batches."
+            "content": "You are a tool AI helping to format, correct and redact long legal texts transcribed from speeches into text to be read by humans. You will receive the text in multiple batches."
         },
         {
             "role": "user",
