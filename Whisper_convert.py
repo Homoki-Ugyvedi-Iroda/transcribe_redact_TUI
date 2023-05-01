@@ -1,5 +1,10 @@
 import whisper
 # prompt alatt mit érthetnek itt?: https://platform.openai.com/docs/guides/speech-to-text/supported-languages
+
+accepted_extensions = "*.mp3;*.m4a;*.mpga;*.wav;*.webm"
+accepted_extensions_list = accepted_extensions.split(";")
+accepted_filesize = 25*1024*1024
+
 def whisper_convert(input_file: str, output_file: str):
 	"""
     Converts the input file to a text.
@@ -8,13 +13,10 @@ def whisper_convert(input_file: str, output_file: str):
     """
 
 	modelName = "large-v2"
-	language = "hungarian"
+	#language = "hungarian"
 	model = whisper.load_model(modelName)
-	result = model.transcribe(audio=input_file, language=language, word_timestamps=False, verbose=False)
+	result = model.transcribe(audio=input_file, word_timestamps=False, verbose=False) #language=language, 
 	print("\nWriting transcription to file...")
 	with open(output_file, "w", encoding="utf-8") as file:
 		file.write(result["text"])
 	print("Finished writing transcription file.")
- 
- #to extend: check extensions, convert with ffmpeg, slice into 25 MB pieces
- # choose the language of the audio itself
