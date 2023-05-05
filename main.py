@@ -1,4 +1,5 @@
 import npyscreen
+import logging
 import os
 import Whisper_convert
 import redact_text_w_openAI
@@ -9,10 +10,16 @@ import sys
 import threading
 from queue import Queue
 import time
+import datetime
 from typing import Tuple
 
-#todo: nyelvválasztás, modellválasztás
-#initial prompttal kiegészítés!
+#todo:  
+        #nyelvválasztás és modellválasztás
+        #videóátalakítás hanggá ffmpeg segítségével
+        #initial prompttal kiegészítés lehetősége, példával
+        #logging törlése
+        #gui változat
+        #deployment
 
 dotenv.load_dotenv()        
 apikey = os.getenv("OPENAI_API_KEY")
@@ -22,8 +29,14 @@ MAX_TOKEN_LENGTHS = {
     "gpt-3.5-turbo": 4096,
 }     
 
-current_model_config = "gpt-3.5-turbo"
+current_model_config = "gpt-4"
 token_max_length = MAX_TOKEN_LENGTHS[current_model_config]
+ratio_of_total_max_prompt = 0.5
+
+logging.basicConfig(
+    filename='test_whisper_w_GPT_log_file.log',
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s')
  
 class MyApp(npyscreen.NPSAppManaged):
     def onStart(self):
@@ -118,20 +131,20 @@ class MainForm(npyscreen.ActionForm):
         text = ''        
         with open(output_file, 'r') as file:
             text = file.read()
-        chunks = util.create_chunks(text, token_max_length)
+        chunks = util.create_chunks(text, int(ratio_of_total_max_prompt * token_max_length))
         output_queue.put("Redaction started ... A response could take up to two minutes per chunk. Number of chunks: {}".format(len(chunks)))
         redacted_text_list = []
         for i, chunk in enumerate(chunks, start=1):
-            start_time = time.time()
-            start_time_local = time.ctime(start_time)
-            output_queue.put("{:.2f}. chunk, started: {}".format(i, start_time_local))
-            next_chunk=redact_text_w_openAI.call_openAi_redact(chunk, apikey, current_model_config)
-            end_time = time.time()
+            start_time = datetime.datetime.now()
+            output_queue.put("{:.2f}. chunk, started: {}".format(i, start_time.strftime("%H:%M:%S")))
+            next_chunk=redact_text_w_openAI.call_openAi_redact(chunk, apikey, current_model_config, int((1-ratio_of_total_max_prompt) * token_max_length)-1)
+                # the decreased size is for safety, because exact numbers throw an error
+            end_time = datetime.datetime.now()
             time_difference = end_time - start_time
             if next_chunk is None:
                 next_chunk = ""
             redacted_text_list.append(next_chunk)
-            output_queue.put("[Redacted chunk: [{}]".format(next_chunk))
+            output_queue.put(f"[Redacted chunk: [{next_chunk[:100]}]")
             output_queue.put("{:.2f}. chunk processing time: {}".format(i, time_difference))
         redacted_text = " ".join(redacted_text_list)
         output_dir, output_filename = os.path.split(output_file)
