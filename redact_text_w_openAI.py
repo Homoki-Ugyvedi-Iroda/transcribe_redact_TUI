@@ -98,7 +98,8 @@ def call_openAi_redact(user_input: str, apikey: str, model_config: str = "gpt-3.
                     model=model_config,
                     max_tokens=max_completion_length,
                     messages=messages,
-                    temperature=0.0
+                    temperature=0.0,
+                    request_timeout=60,
             )
             response_toolbot = completion['choices'][0]['message']['content']
             logging.info(f"completion: {completion}")
@@ -106,5 +107,5 @@ def call_openAi_redact(user_input: str, apikey: str, model_config: str = "gpt-3.
             return response_toolbot
 
     except tuple(error_mapping.keys()) as error:
-        print(f"https://platform.openai.com/docs/guides/error-codes/python-library-error-types Error", error, error_mapping[type(error)])
+        return f"[Error]: {error}, {error_mapping[type(error)]}, \n See details at https://platform.openai.com/docs/guides/error-codes/python-library-error-types"
    
