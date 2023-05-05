@@ -11,18 +11,18 @@ def split_audio(input_file: str, max_size_in_bytes: int):
         _type_: a list of binary audio_chunks
     """
     audio = AudioSegment.from_file(input_file)
-
-    max_chunk_duration_ms = (max_size_in_bytes / (audio.frame_rate * audio.frame_width)) * 1000
-
+    
+    audio_bitrate_kbps = audio.frame_rate * audio.sample_width * audio.channels / 1000
+    max_chunk_audio_duration_ms = int(max_size_in_bytes * 8 / audio_bitrate_kbps)
+    
     audio_chunks = []
     start_time = 0
-    end_time = max_chunk_duration_ms
+    end_time = max_chunk_audio_duration_ms
 
     while start_time < len(audio):
+        end_time = min(len(audio), start_time + max_chunk_audio_duration_ms)
         chunk = audio[start_time:end_time]
         audio_chunks.append(chunk)
-
-        start_time += max_chunk_duration_ms
-        end_time += max_chunk_duration_ms
+        start_time = end_time
 
     return audio_chunks

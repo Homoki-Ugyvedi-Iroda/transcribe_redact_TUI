@@ -1,11 +1,20 @@
 import re
 import tiktoken
+import redact_text_w_openAI
+import json
+
+def own_prompt_length() -> int:
+    size = return_token_length(redact_text_w_openAI.SYSTEM_PROMPT)
+    size += return_token_length(redact_text_w_openAI.read_prompt_instructions())
+    size += return_token_length(json.dumps(redact_text_w_openAI.read_prompt_qa_examples()))
+    return size
 
 def return_token_length(sentence: str) -> int:
-    encoding = tiktoken.encoding_for_model('gpt-4')
+    encoding = tiktoken.get_encoding("cl100k_base")
     return len(encoding.encode(sentence))
     
-def create_chunks(text: str, max_chunk_size=4096) -> list[str]:
+def create_chunks(text: str, max_chunk_size=8192) -> list[str]:
+    max_chunk_size=max_chunk_size-own_prompt_length()
     sentences = re.split(r'(?<=[.!?]) +', text)
 
     chunks = []

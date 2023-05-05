@@ -1,8 +1,9 @@
 import os
 import openai
 import json
+import logging
 
-
+SYSTEM_PROMPT = "You are a silent AI tool helping to format the long texts that were transcribed from speeches. You format the text as follows: you break up the text into paragraphs, correct and redact. You may receive the text in multiple batches. Do not include your own text in the response, and use the original language of the text."
 
 error_mapping = {
     openai.error.AuthenticationError: "The service is not accessible, please try again later! [Authentication Error]",
@@ -15,62 +16,78 @@ error_mapping = {
     Exception: "Some general error not related to OpenAI happened."
 }
 
-def text_to_json(filename):
-
+def text_to_json(filename) -> dict:
+    if os.path.getsize(filename) == 0:
+        return {}
     with open(filename, encoding='utf-8', mode='r') as file:
         text_data = json.load(file)
     return text_data
 
-def construct_prompt_chat_gpt(user_input):
-    
-    prompt_qa_examples = text_to_json(
-        os.path.join(os.getcwd(), 'static', 'prompt_qa_examples.json'))
+def read_prompt_instructions() -> str:
     with open(os.path.join(os.getcwd(), 'static', 'prompt_instructions.txt'), encoding='utf8',
               mode='r') as f:
         prompt_instructions = f.read()
+    return prompt_instructions
 
-    messages = [
-        {
-            "role": "system",
-            "content": "You are a tool AI helping to format, correct and redact long legal texts transcribed from speeches into text to be read by humans. You may receive the text in multiple batches."
-        },
-        {
+def read_prompt_qa_examples() -> dict:
+    return text_to_json(
+        os.path.join(os.getcwd(), 'static', 'prompt_qa_examples.json'))    
+
+def construct_prompt_chat_gpt(user_input):
+    prompt_instructions = read_prompt_instructions()
+    prompt_qa_examples = read_prompt_qa_examples()
+    messages = [{
+        "role": "system",
+        "content": SYSTEM_PROMPT
+        }]
+    if len(prompt_qa_examples) > 0:           
+        messages.append({
             "role": "user",
             "content": prompt_instructions + '\n\n' + prompt_qa_examples[0]["q"]
-        },
-        {
+            },
+            {
             "role": "assistant",
             "content": prompt_qa_examples[0]["a"]
-        }
-    ]
-    for i in range(1, len(prompt_qa_examples)):
+            })
+        for i in range(1, len(prompt_qa_examples)):
+            messages.append({
+                "role": "user",
+                "content": prompt_qa_examples[i]["q"]
+                },
+                {
+                "role": "assistant",
+                "content": prompt_qa_examples[i]["a"]
+                })
+    else:
         messages.append({
             "role": "user",
-            "content": prompt_qa_examples[i]["q"]
-        })
-        messages.append({
-            "role": "assistant",
-            "content": prompt_qa_examples[i]["a"]
-        })
+            "content": prompt_instructions
+            })
     messages.append({
         "role": "user",
         "content": user_input
-    })
+        })
     return messages
 
-def call_openAi_redact(user_input: str, apikey: str) -> str:
+
+def call_openAi_redact(user_input: str, apikey: str, model_config: str = "gpt-3.5-turbo") -> str:
     openai.api_key=apikey
     messages = construct_prompt_chat_gpt(user_input)
+    logging.info(f"messages: {messages}")
+    for value in messages:
+        logging.info(f"Values: {value}")
+                         
     try:
             completion = openai.ChatCompletion.create(
-                    #model="gpt-3.5-turbo",
-                    model="gpt-4",
-                    #max_tokens=,
-                    # when using gpt-3.5, should be 4096 minus the messages size, including prompt and max. question size
+                    model=model_config,
                     messages=messages,
                     temperature=0.0
             )
             response_toolbot = completion['choices'][0]['message']['content']
+            logging.info(f"completion: {completion}")
+            for key, value in completion.items():
+                logging.info(f"The value of [{key}] is: [{value}]")
+
             return response_toolbot
 
     except tuple(error_mapping.keys()) as error:
