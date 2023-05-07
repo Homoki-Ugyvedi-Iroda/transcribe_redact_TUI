@@ -2,158 +2,101 @@ import npyscreen
 import logging
 import os
 import Whisper_convert
-import redact_text_w_openAI
 import dotenv
-import util
 import split_files
 import sys
 import threading
 from queue import Queue
 import time
-import datetime
+from typing import NamedTuple
 from typing import Tuple
+from typing import Protocol
+from converter import ConverterView
+from redactor import RedactorView
+
 
 #todo:  
         #nyelvválasztás és modellválasztás
         #videóátalakítás hanggá ffmpeg segítségével
         #initial prompttal kiegészítés lehetősége, példával
-        #logging törlése
-        #gui változat
-        #deployment
-
-dotenv.load_dotenv()        
-apikey = os.getenv("OPENAI_API_KEY")
-
-MAX_TOKEN_LENGTHS = {
-    "gpt-4": 8192,
-    "gpt-3.5-turbo": 4096,
-}     
-
-current_model_config = "gpt-4"
-token_max_length = MAX_TOKEN_LENGTHS[current_model_config]
-ratio_of_total_max_prompt = 0.5
+        #refactoring: ChooseFileForm; util
+            #OutputHandler / RealtimeOutput: miért kell ebből kettő, melyiknek mi a célja?
+            #redactor és converter esetén a maradék UI-k jó helyen vannak-e, miért ott vannak jó helyen, hogyan lehetne jobban?
+            #model-view direct information exchange van benne? ha igen, az nem jó, átírandó; model legyen kövérebb, a presenter csak közvetítő legyen, inkább itt legyen UI
+            #ChatGPT: "sorrend: 1. initialize View, View initializes Presenter, add presenter to view, presenter initializes            
+        #general OS/IO error handling
+        #unittests?
+        #kilépéskor takarítás: törlése a szétszedett vagy átalakított fájloknak?
+        #PySimpleGUI változat?
+        #logging törlése        
+        #renaming "main.py", deployment, upload
 
 logging.basicConfig(
     filename='test_whisper_w_GPT_log_file.log',
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s')
- 
+
 class MyApp(npyscreen.NPSAppManaged):
     def onStart(self):
-        self.addForm("MAIN", MainForm, name="Audio to text conversion")
+        self.addForm("MAIN", MainForm, name="Audio to text conversion, redaction")
         self.addForm("MISSING_OPENAIAPIKEY", MissingOpenAiApiKey, name="Missing OpenAI API key")
+        if not os.getenv("OPENAI_API_KEY"):
+            self.setNextForm("MISSING_OPENAIAPIKEY")
 
 class MainForm(npyscreen.ActionForm):
     def create(self):
-        self.input_file = None
-        self.output_file = None
-        self.choose_input_button = self.add(npyscreen.ButtonPress, name="Choose input file")
-        self.choose_input_button.whenPressed = self.choose_input_file
-        self.input_file_display = self.add(npyscreen.FixedText, name="Input file:")
-        self.choose_output_button = self.add(npyscreen.ButtonPress, name="Choose output file")
-        self.choose_output_button.whenPressed = self.choose_output_file
-        self.output_file_display = self.add(npyscreen.FixedText, name="Output file:")
-        self.convert_button = self.add(npyscreen.ButtonPress, name="Convert", hidden=True)
-        self.convert_button.whenPressed = self.on_convert
-        self.redact_button = self.add(npyscreen.ButtonPress, name="Redact", hidden=True)
-        self.redact_button.whenPressed = self.on_redact        
-        self.realtime_output = self.add(RealtimeOutput, name="Output:")
-        self.periodic_update = True
-        threading.Thread(target=self.update_output).start()
-        threading.Thread(target=self.wait_for_conversion).start()
-        self.conversion_complete_event = threading.Event()
-    
-    def update_convert_button_visibility(self):
-        if self.input_file_display.value and self.output_file_display.value:
-            self.convert_button.hidden = False
-        else:
-            self.convert_button.hidden = True
-        self.convert_button.update()
-        self.display()
-    
-    def update_redact_button_visibility(self):
-        if self.output_file_display.value and os.path.exists(self.output_file_display.value):                
-            self.redact_button.hidden = False
-        else:
-            self.redact_button.hidden = True
-        self.redact_button.update()
-        self.display()
-   
-    def update_output(self):
-        while self.periodic_update:
-            self.realtime_output.update_output()
-            time.sleep(0.1) 
-               
+        dotenv.load_dotenv()        
+        self.output_queue = Queue()
+        
+        self.file_handler = FileHandler(self)
+        self.file_handler.create()        
+        self.output_handler = OutputHandler(self)
+        self.output_handler.create()
+
+        self.converter = ConverterView(self)
+        self.converter.create() #ez kell még?
+        
+        self.redactor = RedactorView(self, api_key=os.getenv("OPENAI_API_KEY"))
+        self.redactor.create() #ez kell még?
+        
     def on_cancel(self):
-        self.periodic_update = False
+        self.output_handler.stop_periodic_update()
         self.parentApp.setNextForm(None)
-        self.parentApp.setNextForm(None)
-    
+        
+class FileHandler:
+    def __init__(self, form):
+        self.form = form
+
+    def create(self):
+        self.form.input_file = None
+        self.form.output_file = None
+
+        self.form.choose_input_button = self.form.add(npyscreen.ButtonPress, name="Choose input file")
+        self.form.choose_input_button.whenPressed = self.choose_input_file
+        self.form.input_file_display = self.form.add(npyscreen.FixedText, name="Input file:")
+
+        self.form.choose_output_button = self.form.add(npyscreen.ButtonPress, name="Choose output file")
+        self.form.choose_output_button.whenPressed = self.choose_output_file
+        self.form.output_file_display = self.form.add(npyscreen.FixedText, name="Output file:")
+
     def choose_input_file(self):
-        form = ChooseFileForm(parentApp=self.parentApp, mode='input')
+        form = ChooseFileForm(parentApp=self.form.parentApp, mode='input')
         form.edit()
-        self.input_file = form.selected_file
-        self.update_convert_button_visibility()
-        
+        self.form.input_file = form.selected_file
+        self.form.converter.update_visibility()
+
     def choose_output_file(self):
-        form = ChooseFileForm(parentApp=self.parentApp, mode='output')
+        form = ChooseFileForm(parentApp=self.form.parentApp, mode='output')
         form.edit()
-        self.output_file = form.selected_file
-        self.update_convert_button_visibility()
-        self.update_redact_button_visibility()    
-    
-    def on_convert(self):
-        input_file = self.input_file_display.value
-        output_file = self.output_file_display.value        
-        output_queue.put("Starting conversion... \n")
-        self.conversion_thread = OutputThread(target=Whisper_convert.whisper_convert, args=(input_file, output_file), event=self.conversion_complete_event)
-        self.display()
-        
-    def conversion_complete(self):
-        #npyscreen.notify_confirm("Conversion complete!", title="Success")        
-        output_queue.put("Conversion complete! \n")
-        self.redact_button.hidden = False
-        self.redact_button.update()
-        self.display()
-    
-    def wait_for_conversion(self):
-        while self.periodic_update:
-            if self.conversion_complete_event.is_set():
-                self.conversion_complete_event.clear()
-                self.conversion_complete()
-            time.sleep(0.1)
-            
-    def on_redact(self):
-        output_file = self.output_file_display.value
-        
-        if not apikey:
-            self.parentApp.setNextForm("MISSING_OPENAIAPIKEY")               
-        text = ''        
-        with open(output_file, 'r') as file:
-            text = file.read()
-        chunks = util.create_chunks(text, int(ratio_of_total_max_prompt * token_max_length))
-        output_queue.put("Redaction started ... A response could take up to two minutes per chunk. Number of chunks: {}".format(len(chunks)))
-        redacted_text_list = []
-        for i, chunk in enumerate(chunks, start=1):
-            start_time = datetime.datetime.now()
-            output_queue.put("{:.2f}. chunk, started: {}".format(i, start_time.strftime("%H:%M:%S")))
-            next_chunk=redact_text_w_openAI.call_openAi_redact(chunk, apikey, current_model_config, int((1-ratio_of_total_max_prompt) * token_max_length)-1)
-                # the decreased size is for safety, because exact numbers throw an error
-            end_time = datetime.datetime.now()
-            time_difference = end_time - start_time
-            if next_chunk is None:
-                next_chunk = ""
-            redacted_text_list.append(next_chunk)
-            output_queue.put(f"[Redacted chunk: [{next_chunk[:100]}]")
-            output_queue.put("{:.2f}. chunk processing time: {}".format(i, time_difference))
-        redacted_text = " ".join(redacted_text_list)
-        output_dir, output_filename = os.path.split(output_file)
-        redacted_filename = "redacted_" + output_filename
-        redacted_output_file = os.path.join(output_dir, redacted_filename)
-        with open(redacted_output_file, "w", encoding="utf-8") as file:
-	        file.write(redacted_text)
+        self.form.output_file = form.selected_file
+        self.form.converter.update_visibility()
+        self.form.redactor.update_visibility()
 
 class ChooseFileForm(npyscreen.ActionForm):
+    class ValidationResult(NamedTuple):
+        valid: bool
+        message: str = None
+    
     def __init__(self, *args, mode='input', **kwargs):
         self.mode = mode
         super().__init__(*args, **kwargs)
@@ -196,20 +139,20 @@ class ChooseFileForm(npyscreen.ActionForm):
             file_size_in_MB = int(file_size_actual / 1024 ** 2)
             max_file_size = int(Whisper_convert.accepted_filesize / 1024 ** 2)
             npyscreen.notify_confirm("The input file size {} MB is longer than {} MB.".format(file_size_in_MB, max_file_size), title="Error")
-            notify_result = npyscreen.notify_ok_cancel("Shall I split the input file {} into the necessary chunk sizes and process the first chunk?".format(filename))
+            notify_result = npyscreen.notify_ok_cancel("Shall I split the input file {} into the necessary chunk sizes and process the chunks?".format(filename))
             if notify_result==False:
-                return False            
-            chunks = split_files.split_audio(filename, Whisper_convert.accepted_filesize)
-            if not os.access(filename, os.W_OK):
-                    npyscreen.notify_confirm("I cannot write the split files to the directory of the input file {}, because the directory is not writable. Please choose a different file or check permissions.".format(filename), title="Error")
-                    return False
-            for i, chunk in enumerate(chunks):
-                filename_root, file_ext = os.path.splitext(filename)
-                chunk.export(f"{filename_root}_{i}{file_ext}", format=file_ext[1:])
-            filename = f"{filename_root}_0{file_ext}"            
+                return False
+            else:                
+                chunks = split_files.split_audio(filename, Whisper_convert.accepted_filesize)
+                if not os.access(filename, os.W_OK):
+                        npyscreen.notify_confirm("I cannot write the split files to the directory of the input file {}, because the directory is not writable. Please choose a different file or check permissions.".format(filename), title="Error")
+                        return False
+                for i, chunk in enumerate(chunks):
+                    filename_root, file_ext = os.path.splitext(filename)
+                    chunk.export(f"{filename_root}_{i}{file_ext}", format=file_ext[1:])
+                split_files_processed = True
             return True, filename
-        return True
-    
+        
     @staticmethod
     def validate_input_file(filename: str)-> bool: 
         if ChooseFileForm.is_extension_accepted(filename):            
@@ -245,6 +188,32 @@ class ChooseFileForm(npyscreen.ActionForm):
                                 
     def on_cancel(self):
         self.parentApp.setNextForm("MAIN")
+
+class ViewInterface(Protocol):
+    def update_visibility(self, visible: bool) -> None:
+        pass
+
+    def display_message_queue(self, message: str) -> None:
+        pass
+    
+    def display_message_confirm(self, message: str) -> None:
+        pass
+    
+    def display_message_ok_cancel(self, message: str) -> None:
+        pass
+
+class BaseView(ViewInterface):
+    def __init__(self, form):
+        self.form = form
+
+    def display_message_queue(self, message: str):
+        self.form.output_queue.put(message)
+        
+    def display_message_confirm(self, message: str):
+        npyscreen.notify_confirm(message)
+        
+    def display_message_ok_cancel(self, message)-> bool:
+        return npyscreen.notify_ok_cancel(message)
     
 class MissingOpenAiApiKey(npyscreen.ActionForm):
     def create(self):
@@ -258,22 +227,42 @@ class MissingOpenAiApiKey(npyscreen.ActionForm):
         
     def on_cancel(self):
         self.parentApp.setNextForm("MAIN")  
+
+class OutputHandler:
+    def __init__(self, form, output_queue):
+        self.form = form
+        self.periodic_update = True
+        self.output_queue = output_queue
+
+    def create(self):
+        self.form.realtime_output = self.form.add(RealtimeOutput, name="Output:", output_queue=self.output_queue)
+        threading.Thread(target=self.update_output).start()
+
+    def update_output(self):
+        while self.periodic_update:
+            self.form.realtime_output.update_output()
+            time.sleep(0.1)
+
+    def stop_periodic_update(self):
+        self.periodic_update = False
         
 class RealtimeOutput(npyscreen.BoxTitle):
     _contained_widget = npyscreen.Pager
 
+    def __init__(self, *args, output_queue=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.output_queue = output_queue
+    
     def update(self, *args, **keywords):
         super(RealtimeOutput, self).update(*args, **keywords)
 
     def update_output(self):
-        while not output_queue.empty():
-            message = output_queue.get()
+        while not self.output_queue.empty():
+            message = self.output_queue.get()
             self.values.append(message)
             self.display()
 
-output_queue = Queue()
-
-class OutputThread(threading.Thread):
+'''class OutputThread(threading.Thread):
     def __init__(self, target, args, event):
         super(OutputThread, self).__init__()
         self.target = target
@@ -286,7 +275,7 @@ class OutputThread(threading.Thread):
         with RedirectStdout(CustomStdout()):
             self.target(*self.args)
         self.event.set()
-
+        
 class RedirectStdout:
     def __init__(self, new_stdout):
         self.new_stdout = new_stdout
@@ -306,9 +295,9 @@ class CustomStdout:
         sys.__stdout__.write(s)
 
     def flush(self):
-        sys.__stdout__.flush()
+        sys.__stdout__.flush()    
+'''
 
-     
 if __name__ == "__main__":
     app = MyApp()
     app.run()
