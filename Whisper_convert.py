@@ -2,6 +2,7 @@ import whisper
 import util
 import main
 import os
+import sys
 
 accepted_extensions = "*.mp3;*.m4a;*.mpga;*.wav;*.webm"
 accepted_extensions_list = accepted_extensions.split(";")
@@ -27,3 +28,8 @@ def whisper_convert(input_file: str, output_file: str):
 	else:
 		with open(output_file, "w", encoding="utf-8") as file:
 			file.write(result["text"])
+   
+	if __name__ == "__main__":
+		input_file = sys.argv[1]
+		output_file = sys.argv[2]
+		whisper_convert(input_file, output_file)
