@@ -17,7 +17,7 @@ from redactor import RedactorView
 
 #todo:  
         #nyelvválasztás és modellválasztás
-        #videóátalakítás hanggá ffmpeg segítségével
+        #videóátalakítás hanggá ffmpeg segítségével?
         #initial prompttal kiegészítés lehetősége, példával
         #refactoring: ChooseFileForm; util
             #OutputHandler / RealtimeOutput: miért kell ebből kettő, melyiknek mi a célja?
