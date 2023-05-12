@@ -1,17 +1,11 @@
 import whisper
 import util
 import os
-import sys
-#import torch
-#import datetime
 import tiktoken
 
 class WhisperConverter:
     
-	accepted_extensions = "*.mp3;*.m4a;*.mpga;*.wav;*.webm"
-	accepted_extensions_list = accepted_extensions.split(";")
-	accepted_filesize = 25*1024*1024
-
+	
 	def __init__(self, queue):
 		self.queue = queue
 

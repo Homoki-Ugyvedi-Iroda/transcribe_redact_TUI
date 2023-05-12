@@ -33,7 +33,7 @@ class RedactorView(BaseView, ViewInterface):
         if visible is not None:
             self.form.redact_button.hidden = not visible
         else:            
-            if self.form.input_file is not None:
+            if self.form.output_file is not None:
                 self.form.redact_button.hidden = False
             else:
                 self.form.redact_button.hidden = True
@@ -44,6 +44,9 @@ class RedactorModel:
         self.view = view
         
     def redact(self, output_file: str, apikey: str, current_model_config: str, token_max_length: int, ratio_of_total_max_prompt: float) -> str:
+        if not os.path.exists(output_file):
+            self.view.display_message_confirm("The text file {} does not exist. Please choose a new one".format(output_file))
+            return ''
         text = ''
         with open(output_file, 'r') as file:
             text = file.read()
@@ -54,15 +57,16 @@ class RedactorModel:
 
         for i, chunk in enumerate(chunks, start=1):            
             start_time = datetime.datetime.now()
-            self.view.display_message_queue.put("{:.2f}. chunk, started: {}".format(i, start_time.strftime("%H:%M:%S")))
-            redacted_chunk = OpenAIRedactor(chunk, apikey, current_model_config, int((1 - ratio_of_total_max_prompt) * token_max_length) - 1)
+            self.view.display_message_queue("{:.2f}. chunk, started: {}".format(i, start_time.strftime("%H:%M:%S")))
+            redact_with_OpenAI=OpenAIRedactor(apikey)
+            redacted_chunk = redact_with_OpenAI.call_openAi_redact(chunk, current_model_config, int((1 - ratio_of_total_max_prompt) * token_max_length) - 1)
             end_time = datetime.datetime.now()
             time_difference = end_time - start_time
             if redacted_chunk is None:
                 redacted_chunk = ""
             redacted_text_list.append(redacted_chunk)
-            self.view.display_message_queue.put(f"[Redacted chunk: [{redacted_chunk[:100]}]")
-            self.view.display_message_queue.put("{:.2f}. chunk processing time: {}".format(i, time_difference))
+            self.view.display_message_queue(f"[Redacted chunk: [{redacted_chunk[:100]}]")
+            self.view.display_message_queue("{:.2f}. chunk processing time: {}".format(i, time_difference))
 
         redacted_text = " ".join(redacted_text_list)
         return redacted_text
@@ -75,9 +79,11 @@ class RedactorPresenter:
     def handle_redaction(self): 
         output_file = self.view.form.output_file_display.value       
         start_time = datetime.datetime.now()
-        redacted_text = self.model.redact(output_file, self.apikey, current_model_config, token_max_length, ratio_of_total_max_prompt) 
+        redacted_text = self.model.redact(output_file, self.view.api_key, current_model_config, token_max_length, ratio_of_total_max_prompt) 
+        if redacted_text == "":
+            return
         self._write_redacted_file(output_file=output_file, redacted_text=redacted_text)
-        self.view.display_message_confirm("Redaction complete!", title="Success")
+        self.view.display_message_confirm("Redaction complete!")
        
     def _write_redacted_file(self, output_file: str, redacted_text: str):
         output_dir, output_filename = os.path.split(output_file)

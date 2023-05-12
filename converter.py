@@ -1,6 +1,5 @@
 from main import BaseView
 from main import ViewInterface
-from main import OutputThread
 from contextlib import redirect_stdout
 
 class ConverterView(BaseView, ViewInterface):
