@@ -1,5 +1,7 @@
 from main import BaseView
 from main import ViewInterface
+from main import OutputThread
+from contextlib import redirect_stdout
 
 class ConverterView(BaseView, ViewInterface):
 
@@ -42,11 +44,13 @@ class ConverterPresenter:
         self.model = ConverterModel(view)
         
     def handle_conversion(self):
+        from main import CustomStdout
         input_file = self.view.form.input_file_display.value
         output_file = self.view.form.output_file_display.value
 
         if input_file and output_file:
             self.view.display_message_queue("Starting conversion... \n")
-            self.model.convert(input_file, output_file)
+            with redirect_stdout(CustomStdout(self.view.form.output_queue)):
+                self.model.convert(input_file, output_file)
             self.view.display_message_queue("Conversion complete! \n")
-        
+

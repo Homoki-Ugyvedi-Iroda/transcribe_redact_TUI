@@ -14,7 +14,11 @@ class WhisperConverter:
 
 	def __init__(self, queue):
 		self.queue = queue
-        
+
+	def display_message_queue(self, message: str):
+		self.queue.put(message)
+
+ 
 	def whisper_convert(self, input_file: str, output_file: str, language: str='', initial_prompt: str=''):
 		"""
 	    Converts the input file to a text.
@@ -23,6 +27,7 @@ class WhisperConverter:
 		:language: the language in two-letter ISO format of the language of the audio (if not provided, the first 30 seconds will be used to discover)
 		:initial_prompt: an instruction to the model regarding the format or content of the audio (or previous context), only the final 224 tokens will be used
 	    """
+  
 		modelName = "large"
 		model = whisper.load_model(modelName, 'cpu')
 		decode_options = {}
@@ -36,10 +41,10 @@ class WhisperConverter:
 	
 		if util.check_split_files(input_file):
 			chunk_filenames = util.list_split_files(input_file) #ordered list of files is returned
-			self.queue.put("Converting multiple files ({})... \n".format(len(chunk_filenames)))
+			self.display_message_queue("Converting multiple files ({})... \n".format(len(chunk_filenames)))
 			for filename in chunk_filenames:
 				model = whisper.load_model(modelName)
-				self.queue.put("Converting file: ({})... \n".format(os.path.basename(filename)))
+				self.display_message_queue("Converting file: ({})... \n".format(os.path.basename(filename)))
 				result = model.transcribe(audio=filename, word_timestamps=False, verbose=True, **decode_options) 		
 				with open(output_file, "a", encoding="utf-8") as file:
 					file.write(result["text"].strip())       
@@ -48,7 +53,3 @@ class WhisperConverter:
 			with open(output_file, "w", encoding="utf-8") as file:
 				file.write(result["text"])     
 	
-			'''if __name__ == "__main__":
-			input_file = sys.argv[1]
-			output_file = sys.argv[2]
-			whisper_convert(input_file, output_file)'''

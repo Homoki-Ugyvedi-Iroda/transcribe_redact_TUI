@@ -236,7 +236,7 @@ class OutputHandler:
         self.form = form
         self.periodic_update = True
         self.output_queue = output_queue
-
+        
     def create(self):
         self.form.realtime_output = self.form.add(RealtimeOutput, name="Output:", output_queue=self.output_queue, rely=15, relx=1, max_height=10, max_width=70)
         threading.Thread(target=self.update_output).start()
@@ -290,16 +290,18 @@ class RedirectStdout:
 
     def __exit__(self, exc_type, exc_value, traceback):
         sys.stdout = self.old_stdout
-
+'''
 class CustomStdout:
+    def __init__(self, output_queue):
+        self.output_queue = output_queue
+        
     def write(self, s):
         if s != '\n':
-            output_queue.put(s)
+            self.output_queue.put(s)
         sys.__stdout__.write(s)
 
     def flush(self):
         sys.__stdout__.flush()    
-'''
 
 if __name__ == "__main__":
     app = MyApp()
