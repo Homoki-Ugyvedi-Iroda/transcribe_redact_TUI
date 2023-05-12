@@ -10,8 +10,8 @@ from typing import Protocol
 
 #todo:  
         #nyelvválasztás és modellválasztás
-        #videóátalakítás hanggá ffmpeg segítségével? NEM
         #initial prompttal kiegészítés lehetősége, példával
+        
         #general OS/IO error handling
         #unittests?
         #kilépéskor takarítás: törlése a szétszedett vagy átalakított fájloknak?
