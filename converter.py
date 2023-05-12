@@ -1,20 +1,28 @@
-import npyscreen
-import Whisper_convert
-import main
+from main import BaseView
+from main import ViewInterface
 
-class ConverterView(main.BaseView, main.ViewInterface):
+class ConverterView(BaseView, ViewInterface):
+
     def __init__(self, form):
         super().__init__(form)
-        self.presenter = ConverterPresenter(form, self)
+        self.presenter = ConverterPresenter(self)
 
     def create(self):
-        self.form.convert_button = self.form.add(npyscreen.ButtonPress, name="Convert", hidden=True)
+        from npyscreen import ButtonPress
+        self.form.convert_button = self.form.add(ButtonPress, name="Convert", hidden=True, rely=7, relx=1, max_height=1, max_width=10)
         self.form.convert_button.whenPressed = self.on_convert
 
-    def update_visibility(self, visible: bool):
-        self.form.convert_button.hidden = not visible
+    def update_visibility(self, visible: bool=None):
+        main_form=self.form.parentApp.getForm("MAIN")
+        if visible is not None:
+            self.form.convert_button.hidden = not visible
+        else:            
+            if main_form.input_file is not None and main_form.output_file is not None:
+                self.form.convert_button.hidden = False
+            else:
+                self.form.convert_button.hidden = True
         self.form.convert_button.update()
-        self.form.display()    
+        self.form.display()
         
     def on_convert(self):
         self.presenter.handle_conversion()
@@ -24,7 +32,9 @@ class ConverterModel:
         self.view = view
         
     def convert(self, input_file: str, output_file: str):
-        Whisper_convert.whisper_convert(input_file, output_file)
+        import Whisper_convert
+        self.wh_converter = Whisper_convert.WhisperConverter(self.view.form.output_queue)
+        self.wh_converter.whisper_convert(input_file, output_file)
 
 class ConverterPresenter:
     def __init__(self, view: ConverterView):
@@ -39,7 +49,4 @@ class ConverterPresenter:
             self.view.display_message_queue("Starting conversion... \n")
             self.model.convert(input_file, output_file)
             self.view.display_message_queue("Conversion complete! \n")
-            self.view.form.redactor.update_visibility()
-        else:
-            self.view.update_visibility(False)
-    
+        

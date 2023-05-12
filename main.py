@@ -1,7 +1,7 @@
 import npyscreen
 import logging
 import os
-import Whisper_convert
+from Whisper_convert import WhisperConverter
 import dotenv
 import split_files
 import sys
@@ -11,13 +11,10 @@ import time
 from typing import NamedTuple
 from typing import Tuple
 from typing import Protocol
-from converter import ConverterView
-from redactor import RedactorView
-
 
 #todo:  
         #nyelvválasztás és modellválasztás
-        #videóátalakítás hanggá ffmpeg segítségével?
+        #videóátalakítás hanggá ffmpeg segítségével? NEM
         #initial prompttal kiegészítés lehetősége, példával
         #refactoring: ChooseFileForm; util
             #OutputHandler / RealtimeOutput: miért kell ebből kettő, melyiknek mi a célja?
@@ -45,19 +42,25 @@ class MyApp(npyscreen.NPSAppManaged):
 
 class MainForm(npyscreen.ActionForm):
     def create(self):
+        from converter import ConverterView
+        from redactor import RedactorView
+
         dotenv.load_dotenv()        
         self.output_queue = Queue()
-        
+        self.input_file = None
+        self.output_file = None
+
         self.file_handler = FileHandler(self)
         self.file_handler.create()        
-        self.output_handler = OutputHandler(self)
-        self.output_handler.create()
-
+        
         self.converter = ConverterView(self)
-        self.converter.create() #ez kell még?
+        self.converter.create()
         
         self.redactor = RedactorView(self, api_key=os.getenv("OPENAI_API_KEY"))
-        self.redactor.create() #ez kell még?
+        self.redactor.create()
+        
+        self.output_handler = OutputHandler(self, self.output_queue)
+        self.output_handler.create()
         
     def on_cancel(self):
         self.output_handler.stop_periodic_update()
@@ -68,8 +71,6 @@ class FileHandler:
         self.form = form
 
     def create(self):
-        self.form.input_file = None
-        self.form.output_file = None
 
         self.form.choose_input_button = self.form.add(npyscreen.ButtonPress, name="Choose input file")
         self.form.choose_input_button.whenPressed = self.choose_input_file
@@ -104,7 +105,7 @@ class ChooseFileForm(npyscreen.ActionForm):
     def create(self):
         self.file_widget = self.add(npyscreen.TitleFilename, name="Choose {} file:".format(self.mode),
                                      select_dir=False, must_exist=True,
-                                     mask=Whisper_convert.accepted_extensions if self.mode == 'input' else "*.txt")
+                                     mask=WhisperConverter.accepted_extensions if self.mode == 'input' else "*.txt")
         self.add(npyscreen.FixedText, value="Press TAB to browse files from the directory entered (ending with \\)", editable=False)
         self.selected_file = None
     
@@ -129,21 +130,21 @@ class ChooseFileForm(npyscreen.ActionForm):
     def is_extension_accepted(filename: str) -> bool:
         _, file_ext = os.path.splitext(filename)
         file_ext = f"*{file_ext}" 
-        return file_ext in Whisper_convert.accepted_extensions_list
+        return file_ext in WhisperConverter.accepted_extensions_list
     
     def is_length_below_limit(self, filename: str)-> Tuple[bool, str]:
-        if os.path.getsize(filename) < Whisper_convert.accepted_filesize:
+        if os.path.getsize(filename) < WhisperConverter.accepted_filesize:
             return True, filename
         else:
             file_size_actual = os.path.getsize(filename)
             file_size_in_MB = int(file_size_actual / 1024 ** 2)
-            max_file_size = int(Whisper_convert.accepted_filesize / 1024 ** 2)
+            max_file_size = int(WhisperConverter.accepted_filesize / 1024 ** 2)
             npyscreen.notify_confirm("The input file size {} MB is longer than {} MB.".format(file_size_in_MB, max_file_size), title="Error")
             notify_result = npyscreen.notify_ok_cancel("Shall I split the input file {} into the necessary chunk sizes and process the chunks?".format(filename))
             if notify_result==False:
                 return False
             else:                
-                chunks = split_files.split_audio(filename, Whisper_convert.accepted_filesize)
+                chunks = split_files.split_audio(filename, WhisperConverter.accepted_filesize)
                 if not os.access(filename, os.W_OK):
                         npyscreen.notify_confirm("I cannot write the split files to the directory of the input file {}, because the directory is not writable. Please choose a different file or check permissions.".format(filename), title="Error")
                         return False
@@ -161,27 +162,29 @@ class ChooseFileForm(npyscreen.ActionForm):
             npyscreen.notify_confirm("The input file {} does not exist.".format(filename), title="Error")
             return False
         else:
-            npyscreen.notify_confirm("The input file extension {} is not accepted. Please convert it to one of the accepted formats: {}.".format(filename, Whisper_convert.accepted_extensions), title="Error")
+            npyscreen.notify_confirm("The input file extension {} is not accepted. Please convert it to one of the accepted formats: {}.".format(filename, WhisperConverter.accepted_extensions), title="Error")
             return False
         
     def on_ok(self):
-        selected_file = self.file_widget.value
+        self.selected_file = self.file_widget.value
+        main_form=self.parentApp.getForm("MAIN")
+            
         if self.mode == 'input':
-            if ChooseFileForm.validate_input_file(selected_file):                    
-                    is_length_below, new_filename = self.is_length_below_limit(selected_file)
+            if ChooseFileForm.validate_input_file(self.selected_file):                    
+                    is_length_below, new_filename = self.is_length_below_limit(self.selected_file)
                     if is_length_below:
-                        selected_file = new_filename
-                        self.parentApp.getForm("MAIN").input_file = selected_file
+                        self.selected_file = new_filename
+                        main_form.input_file = self.selected_file
                         self.parentApp.setNextForm("MAIN")
-                        self.parentApp.getForm("MAIN").input_file_display.value = selected_file
-                        self.parentApp.getForm("MAIN").input_file_display.update()
+                        main_form.input_file_display.value = self.selected_file
+                        main_form.input_file_display.update()
             else:
                 self.parentApp.setNextForm("MISSING_FILE")
         elif self.mode == 'output':
-            if ChooseFileForm.validate_output_file(selected_file):
-                self.parentApp.getForm("MAIN").output_file = selected_file
-                self.parentApp.getForm("MAIN").output_file_display.value = selected_file
-                self.parentApp.getForm("MAIN").output_file_display.update()
+            if ChooseFileForm.validate_output_file(self.selected_file):
+                main_form.output_file = self.selected_file
+                main_form.output_file_display.value = self.selected_file
+                main_form.output_file_display.update()
                 self.parentApp.setNextForm("MAIN")
             else:
                 self.parentApp.setNextForm("MISSING_FILE")
@@ -190,7 +193,7 @@ class ChooseFileForm(npyscreen.ActionForm):
         self.parentApp.setNextForm("MAIN")
 
 class ViewInterface(Protocol):
-    def update_visibility(self, visible: bool) -> None:
+    def update_visibility(self, visible: bool=None) -> None:
         pass
 
     def display_message_queue(self, message: str) -> None:
@@ -235,7 +238,7 @@ class OutputHandler:
         self.output_queue = output_queue
 
     def create(self):
-        self.form.realtime_output = self.form.add(RealtimeOutput, name="Output:", output_queue=self.output_queue)
+        self.form.realtime_output = self.form.add(RealtimeOutput, name="Output:", output_queue=self.output_queue, rely=15, relx=1, max_height=10, max_width=70)
         threading.Thread(target=self.update_output).start()
 
     def update_output(self):
