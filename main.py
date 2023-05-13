@@ -7,15 +7,19 @@ import threading
 from queue import Queue
 import time
 from typing import Protocol
+import ui_const
 
 #todo:  
-        #nyelvválasztás és modellválasztás
-        #initial prompttal kiegészítés lehetősége, példával
-        
+        #nyelvválasztás és modellválasztás: tesztelés a végrehajtásra
+        #teszt: AutoScrollPager jól működik?
+        #miért nem tudok visszalépni RealtimeOutputon?
+      
+        #PySimpleGUI változat        
         #general OS/IO error handling
         #unittests?
+        #helpek megírása és ellenőrzése, hogy jó helyen ugranak-e föl
+        
         #kilépéskor takarítás: törlése a szétszedett vagy átalakított fájloknak?
-        #PySimpleGUI változat?
         #logging törlése        
         #renaming "main.py", deployment, upload
 
@@ -26,12 +30,16 @@ logging.basicConfig(
 
 class MyApp(npyscreen.NPSAppManaged):
     def onStart(self):
-        self.addForm("MAIN", MainForm, name="Audio to text conversion, redaction")
-        self.addForm("MISSING_OPENAIAPIKEY", MissingOpenAiApiKey, name="Missing OpenAI API key")
+        import lang_model_prompt_chooser
+        self.addForm("MAIN", MainForm, name=ui_const.NAME_MAINFORM_EN)
+        self.addForm("MISSING_OPENAIAPIKEY", MissingOpenAiApiKey, name=ui_const.NAME_MISSINGOPENAIKEY_EN)
+        self.addForm('CHOOSELANG', lang_model_prompt_chooser.ChooseLanguageForm, name=ui_const.NAME_CHOOSELANGUAGE_EN)
+        self.addForm('CHOOSEMODEL', lang_model_prompt_chooser.ChooseModelForm, name=ui_const.NAME_CHOOSEMODEL_EN)
+        self.addForm('INIT_PROMPT', lang_model_prompt_chooser.SetInitialPrompt, name=ui_const.NAME_INITIALPROMPT_EN)
         if not os.getenv("OPENAI_API_KEY"):
             self.setNextForm("MISSING_OPENAIAPIKEY")
-
-class MainForm(npyscreen.ActionForm):
+    
+class MainForm(npyscreen.FormBaseNew):
     def create(self):
         from converter import ConverterView
         from redactor import RedactorView
@@ -40,7 +48,7 @@ class MainForm(npyscreen.ActionForm):
         self.output_queue = Queue()
         self.input_file = None
         self.output_file = None
-
+        
         self.file_handler = FileHandler(self)
         self.file_handler.create()        
         
@@ -48,39 +56,61 @@ class MainForm(npyscreen.ActionForm):
         self.converter.create()
         
         self.redactor = RedactorView(self, api_key=os.getenv("OPENAI_API_KEY"))
-        self.redactor.create()
+        self.redactor.create()       
+        
+        self.lang_model_creator()  
+        self.initial_prompt_creator()
         
         self.output_handler = OutputHandler(self, self.output_queue)
         self.output_handler.create()
+                
+        y, x = self.useable_space()
+        self.exit_button = self.add(npyscreen.ButtonPress, name=ui_const.NAME_EXITBUTTON_EN, rely=y-3, relx=x-10)
+        self.exit_button.whenPressed = self.exit_application
         
-    def on_cancel(self):
+       
+    def initial_prompt_creator(self):
+        from lang_model_prompt_chooser import SetInitialPrompt, InitialPromptButton
+        self.initial_prompt = ""        
+        self.initial_prompt_setter = SetInitialPrompt(self)
+        self.initial_prompt_setter.create()
+        self.initial_prompt_button = InitialPromptButton(self)
+        self.initial_prompt_button.create()        
+
+    def lang_model_creator(self):
+        from lang_model_prompt_chooser import ChooseLanguageButton, ChooseModelButton
+        self.language = ChooseLanguageButton(self)
+        self.language.create()
+        self.model = ChooseModelButton(self)
+        self.model.create()
+    
+    def exit_application(self):
         self.output_handler.stop_periodic_update()
-        self.parentApp.setNextForm(None)
+        self.parentApp.switchForm(None)
         
 class FileHandler:
     def __init__(self, form):
         self.form = form
 
     def create(self):
-
-        self.form.choose_input_button = self.form.add(npyscreen.ButtonPress, name="Choose audio file for transcription")
+        self.form.choose_input_button = self.form.add(npyscreen.ButtonPress, name=ui_const.NAME_AUDIOFILEBUTTON_EN)
         self.form.choose_input_button.whenPressed = self.choose_input_file
-        self.form.input_file_display = self.form.add(npyscreen.FixedText, name="Audio file:")
+        self.form.input_file_display = self.form.add(npyscreen.FixedText, name=ui_const.NAME_AUDIOFILEDISPLAY_EN)
 
-        self.form.choose_output_button = self.form.add(npyscreen.ButtonPress, name="Choose text file (as output for conversion or input for redaction)")
+        self.form.choose_output_button = self.form.add(npyscreen.ButtonPress, name=ui_const.NAME_TEXTFILEBUTTON_EN)
         self.form.choose_output_button.whenPressed = self.choose_output_file
-        self.form.output_file_display = self.form.add(npyscreen.FixedText, name="Text file:")
-
+        self.form.output_file_display = self.form.add(npyscreen.FixedText, name=ui_const.NAME_TEXTFILEDISPLAY_EN)
+    
     def choose_input_file(self):
-        from choosefile import ChooseFileForm
-        form = ChooseFileForm(parentApp=self.form.parentApp, mode='input')
+        from choose_file import ChooseFileForm
+        form = ChooseFileForm(parentApp=self.form.parentApp, mode='input', help=ui_const.HELP_AUDIOFILEDISPLAY_EN)
         form.edit()
         self.form.input_file = form.selected_file
         self.form.converter.update_visibility()
 
     def choose_output_file(self):
-        from choosefile import ChooseFileForm        
-        form = ChooseFileForm(parentApp=self.form.parentApp, mode='output')
+        from choose_file import ChooseFileForm        
+        form = ChooseFileForm(parentApp=self.form.parentApp, mode='output', help=ui_const.HELP_TEXTFILEDISPLAY_EN)
         form.edit()
         self.form.output_file = form.selected_file
         self.form.converter.update_visibility()
@@ -114,7 +144,7 @@ class BaseView(ViewInterface):
     
 class MissingOpenAiApiKey(npyscreen.ActionForm):
     def create(self):
-        self.add(npyscreen.TitleText, name = "Enter missing OpenAI API key")
+        self.add(npyscreen.TitleText, name = ui_const.NAME_MISSINGOPENAIKEYDISPLAY_EN)
     def on_ok(self):
         apikey = self.get.widget(0).value
         if not apikey or apikey.strip() == "":
@@ -124,7 +154,7 @@ class MissingOpenAiApiKey(npyscreen.ActionForm):
         
     def on_cancel(self):
         self.parentApp.setNextForm("MAIN")  
-
+        
 class OutputHandler:
     def __init__(self, form, output_queue):
         self.form = form
@@ -132,7 +162,7 @@ class OutputHandler:
         self.output_queue = output_queue
         
     def create(self):
-        self.form.realtime_output = self.form.add(RealtimeOutput, name="Output:", output_queue=self.output_queue, rely=15, relx=1, max_height=10, max_width=128)
+        self.form.realtime_output = self.form.add(RealtimeOutput, name=ui_const.NAME_OUTPUT_EN, output_queue=self.output_queue, relx=1, rely=9, max_height=18)
         threading.Thread(target=self.update_output).start()
 
     def update_output(self):
@@ -164,32 +194,6 @@ class RealtimeOutput(npyscreen.BoxTitle):
             self.values.append(message)
             self.display()
 
-'''class OutputThread(threading.Thread):
-    def __init__(self, target, args, event):
-        super(OutputThread, self).__init__()
-        self.target = target
-        self.args = args
-        self.daemon = True
-        self.start()
-        self.event = event
-        
-    def run(self):      
-        with RedirectStdout(CustomStdout()):
-            self.target(*self.args)
-        self.event.set()
-        
-class RedirectStdout:
-    def __init__(self, new_stdout):
-        self.new_stdout = new_stdout
-        self.old_stdout = None
-
-    def __enter__(self):
-        self.old_stdout = sys.stdout
-        sys.stdout = self.new_stdout
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        sys.stdout = self.old_stdout
-'''
 class CustomStdout:
     def __init__(self, output_queue):
         self.output_queue = output_queue

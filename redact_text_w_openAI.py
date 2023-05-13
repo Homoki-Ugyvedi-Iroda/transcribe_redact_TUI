@@ -4,10 +4,6 @@ import json
 import logging
 import util
 
-SYSTEM_PROMPT = "You are a silent AI tool helping to format the long texts that were transcribed from speeches. You format the text as follows: you break up the text into paragraphs, correct and redact. You may receive the text in multiple batches. Do not include your own text in the response, and use the original language of the text."
-#gpt-3.5-turbo esetén prompt_instructions-be kerüljön bele SYSTEM_PROMPT is
-REQUEST_TIMEOUT = 300
-
 error_mapping = {
     openai.error.AuthenticationError: "The service is not accessible, please try again later! [Authentication Error]",
     openai.error.RateLimitError: "Too many requests sent by the demo or server overloaded, please try again later! [RateLimit Error]",
@@ -22,7 +18,7 @@ error_mapping = {
 class OpenAIRedactor:
     def __init__(self, api_key):
         self.api_key = api_key
-        openai.api_key = self.api_key        
+        openai.api_key = self.api_key
 
     def text_to_json(self, filename) -> dict:
         if os.path.getsize(filename) == 0:
@@ -41,12 +37,15 @@ class OpenAIRedactor:
         return self.text_to_json(
             os.path.join(os.getcwd(), 'static', 'prompt_qa_examples.json'))    
 
-    def construct_prompt_chat_gpt(self, user_input):
+    def construct_prompt_chat_gpt(self, user_input, system_prompt, model_config):
+        if model_config == "gpt-3.5-turbo": #gpt-3.5 tends to ignore system_prompt [verify if changed]
+            user_input = system_prompt + ". " + user_input
+            system_prompt = ""
         prompt_instructions = self.read_prompt_instructions().strip()
         prompt_qa_examples = self.read_prompt_qa_examples()
         messages = [{
             "role": "system",
-            "content": SYSTEM_PROMPT
+            "content": system_prompt
             }]
         size_of_messages = util.get_token_length(json.dumps(messages))
         logging.info(f"prompt_size_in_message: {size_of_messages}")
@@ -92,8 +91,8 @@ class OpenAIRedactor:
         return messages
 
 
-    def call_openAi_redact(self, user_input: str, model_config: str = "gpt-3.5-turbo", max_completion_length: int = 2048) -> str:
-        messages = self.construct_prompt_chat_gpt(user_input)
+    def call_openAi_redact(self, user_input: str, system_prompt: str, model_config: str = "gpt-3.5-turbo", max_completion_length: int = 2048, timeout: int = "") -> str:
+        messages = self.construct_prompt_chat_gpt(user_input, system_prompt, model_config)
         logging.info(f"Messages_prompt: {messages}")
         size_of_messages = util.get_token_length(json.dumps(messages))
         logging.info(f"Messages_length_as_json_dump: {size_of_messages}")
@@ -104,7 +103,7 @@ class OpenAIRedactor:
                         max_tokens=max_completion_length,
                         messages=messages,
                         temperature=0.0,
-                        request_timeout=REQUEST_TIMEOUT,
+                        request_timeout=timeout,
                 )
                 response_toolbot = completion['choices'][0]['message']['content']
                 logging.info(f"completion: {completion}")
