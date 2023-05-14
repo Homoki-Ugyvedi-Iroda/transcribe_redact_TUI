@@ -1,7 +1,6 @@
 import npyscreen
-import logging
 import os
-import dotenv
+from dotenv import load_dotenv, set_key
 import sys
 import threading
 from queue import Queue
@@ -9,45 +8,30 @@ import time
 from typing import Protocol
 import ui_const
 
-#todo:  
-        #nyelvválasztás és modellválasztás: tesztelés a végrehajtásra
-        #teszt: AutoScrollPager jól működik?
-        #miért nem tudok visszalépni RealtimeOutputon?
-      
-        #PySimpleGUI változat        
-        #general OS/IO error handling
-        #unittests?
-        #helpek megírása és ellenőrzése, hogy jó helyen ugranak-e föl
-        
-        #kilépéskor takarítás: törlése a szétszedett vagy átalakított fájloknak?
-        #logging törlése        
-        #renaming "main.py", deployment, upload
-
-logging.basicConfig(
-    filename='test_whisper_w_GPT_log_file.log',
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s')
-
 class MyApp(npyscreen.NPSAppManaged):
     def onStart(self):
         import lang_model_prompt_chooser
+        from converter import SetInitialPrompt
+        from redactor import SetRedactPrompt
         self.addForm("MAIN", MainForm, name=ui_const.NAME_MAINFORM_EN)
         self.addForm("MISSING_OPENAIAPIKEY", MissingOpenAiApiKey, name=ui_const.NAME_MISSINGOPENAIKEY_EN)
         self.addForm('CHOOSELANG', lang_model_prompt_chooser.ChooseLanguageForm, name=ui_const.NAME_CHOOSELANGUAGE_EN)
         self.addForm('CHOOSEMODEL', lang_model_prompt_chooser.ChooseModelForm, name=ui_const.NAME_CHOOSEMODEL_EN)
-        self.addForm('INIT_PROMPT', lang_model_prompt_chooser.SetInitialPrompt, name=ui_const.NAME_INITIALPROMPT_EN)
+        self.addForm('INIT_PROMPT', SetInitialPrompt, name=ui_const.NAME_INITIALPROMPT_EN)
+        self.addForm('REDACT_PROMPT', SetRedactPrompt, name=ui_const.NAME_REDACTPROMPT_EN)
         if not os.getenv("OPENAI_API_KEY"):
             self.setNextForm("MISSING_OPENAIAPIKEY")
     
 class MainForm(npyscreen.FormBaseNew):
     def create(self):
-        from converter import ConverterView
         from redactor import RedactorView
+        from converter import ConverterView
 
-        dotenv.load_dotenv()        
+        load_dotenv()        
         self.output_queue = Queue()
         self.input_file = None
-        self.output_file = None
+        self.output_file = None  
+        self.did_split = []
         
         self.file_handler = FileHandler(self)
         self.file_handler.create()        
@@ -59,23 +43,15 @@ class MainForm(npyscreen.FormBaseNew):
         self.redactor.create()       
         
         self.lang_model_creator()  
-        self.initial_prompt_creator()
-        
+        self.cbCUDA_creator()
+        self.redactor.redact_prompt_button.cb_gpt_4_creator()
+
         self.output_handler = OutputHandler(self, self.output_queue)
         self.output_handler.create()
                 
         y, x = self.useable_space()
         self.exit_button = self.add(npyscreen.ButtonPress, name=ui_const.NAME_EXITBUTTON_EN, rely=y-3, relx=x-10)
         self.exit_button.whenPressed = self.exit_application
-        
-       
-    def initial_prompt_creator(self):
-        from lang_model_prompt_chooser import SetInitialPrompt, InitialPromptButton
-        self.initial_prompt = ""        
-        self.initial_prompt_setter = SetInitialPrompt(self)
-        self.initial_prompt_setter.create()
-        self.initial_prompt_button = InitialPromptButton(self)
-        self.initial_prompt_button.create()        
 
     def lang_model_creator(self):
         from lang_model_prompt_chooser import ChooseLanguageButton, ChooseModelButton
@@ -83,11 +59,34 @@ class MainForm(npyscreen.FormBaseNew):
         self.language.create()
         self.model = ChooseModelButton(self)
         self.model.create()
+
+    def cbCUDA_creator(self):        
+        checkbox_value_str = os.getenv("CUDA")
+        if checkbox_value_str == "True":
+            checkbox_value_bool = True
+        else:
+            checkbox_value_bool = False
+        self.cuda_cb = self.add(npyscreen.Checkbox, name=ui_const.NAME_CUDACBOX_EN, value=checkbox_value_bool, help = ui_const.HELP_TRYCUDA_EN, relx=4, max_width=23)
+        self.cuda_cb.whenToggled = self.update_cuda_cb_save_to_env
+    
+    def update_cuda_cb_save_to_env(self):
+        if self.cuda_cb.value:
+            set_key(".env", "CUDA", "True")
+        else:
+            set_key(".env", "CUDA", "False")
     
     def exit_application(self):
+        split_files_list = self.parentApp.getForm("MAIN").did_split
+        if len(split_files_list) > 0:
+            result = npyscreen.notify_yes_no(ui_const.MSG_DELETEUPONEXIT_EN)
+            for filename in split_files_list:
+                try:
+                    os.remove(filename)
+                except:
+                    pass                
         self.output_handler.stop_periodic_update()
         self.parentApp.switchForm(None)
-        
+ 
 class FileHandler:
     def __init__(self, form):
         self.form = form
@@ -95,11 +94,11 @@ class FileHandler:
     def create(self):
         self.form.choose_input_button = self.form.add(npyscreen.ButtonPress, name=ui_const.NAME_AUDIOFILEBUTTON_EN)
         self.form.choose_input_button.whenPressed = self.choose_input_file
-        self.form.input_file_display = self.form.add(npyscreen.FixedText, name=ui_const.NAME_AUDIOFILEDISPLAY_EN)
+        self.form.input_file_display = self.form.add(npyscreen.FixedText, name=ui_const.NAME_AUDIOFILEDISPLAY_EN, editable=False)
 
         self.form.choose_output_button = self.form.add(npyscreen.ButtonPress, name=ui_const.NAME_TEXTFILEBUTTON_EN)
         self.form.choose_output_button.whenPressed = self.choose_output_file
-        self.form.output_file_display = self.form.add(npyscreen.FixedText, name=ui_const.NAME_TEXTFILEDISPLAY_EN)
+        self.form.output_file_display = self.form.add(npyscreen.FixedText, name=ui_const.NAME_TEXTFILEDISPLAY_EN, editable=False)
     
     def choose_input_file(self):
         from choose_file import ChooseFileForm
@@ -128,6 +127,10 @@ class ViewInterface(Protocol):
     
     def display_message_ok_cancel(self, message: str) -> None:
         pass
+    
+    def display_message_yes_no(self, message: str) -> None:
+        pass
+
 
 class BaseView(ViewInterface):
     def __init__(self, form):
@@ -142,6 +145,10 @@ class BaseView(ViewInterface):
     def display_message_ok_cancel(self, message)-> bool:
         return npyscreen.notify_ok_cancel(message)
     
+    def display_message_yes_no(self, message)-> bool:
+        return npyscreen.notify_yes_no(message)
+
+    
 class MissingOpenAiApiKey(npyscreen.ActionForm):
     def create(self):
         self.add(npyscreen.TitleText, name = ui_const.NAME_MISSINGOPENAIKEYDISPLAY_EN)
@@ -150,7 +157,7 @@ class MissingOpenAiApiKey(npyscreen.ActionForm):
         if not apikey or apikey.strip() == "":
             self.parentApp.setNextForm("MISSING_OPENAIAPIKEY")
         else:
-            dotenv.set_key('.env', "OPENAI_API_KEY", apikey)
+            set_key('.env', "OPENAI_API_KEY", apikey)
         
     def on_cancel(self):
         self.parentApp.setNextForm("MAIN")  
@@ -173,17 +180,12 @@ class OutputHandler:
     def stop_periodic_update(self):
         self.periodic_update = False
 
-class AutoScrollPager(npyscreen.Pager):
-    def update(self, *args, **keywords):
-        super(AutoScrollPager, self).update(*args, **keywords)
-        self.start_display_at = len(self.values)
-
-class RealtimeOutput(npyscreen.BoxTitle):
-    _contained_widget = AutoScrollPager
-
+class RealtimeOutput(npyscreen.BoxTitle):   
     def __init__(self, *args, output_queue=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.output_queue = output_queue
+        self.value = ""
+        self.update()        
     
     def update(self, *args, **keywords):
         super(RealtimeOutput, self).update(*args, **keywords)
@@ -191,7 +193,8 @@ class RealtimeOutput(npyscreen.BoxTitle):
     def update_output(self):
         while not self.output_queue.empty():
             message = self.output_queue.get()
-            self.values.append(message)
+            if message:
+                self.values.append(message)
             self.display()
 
 class CustomStdout:

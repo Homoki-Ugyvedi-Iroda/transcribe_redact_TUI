@@ -1,7 +1,6 @@
 import os
 import openai
 import json
-import logging
 import util
 
 error_mapping = {
@@ -23,13 +22,12 @@ class OpenAIRedactor:
     def text_to_json(self, filename) -> dict:
         if os.path.getsize(filename) == 0:
             return {}
-        with open(filename, encoding='utf-8', mode='r') as file:
+        with open(filename, encoding='utf-8', mode='r', errors="ignore") as file:
             text_data = json.load(file)
         return text_data
 
     def read_prompt_instructions(self) -> str:
-        with open(os.path.join(os.getcwd(), 'static', 'prompt_instructions.txt'), encoding='utf8',
-                mode='r') as f:
+        with open(os.path.join(os.getcwd(), 'static', 'prompt_instructions.txt'), encoding='utf8', mode='r', errors="ignore") as f:
             prompt_instructions = f.read()
         return prompt_instructions
 
@@ -38,7 +36,7 @@ class OpenAIRedactor:
             os.path.join(os.getcwd(), 'static', 'prompt_qa_examples.json'))    
 
     def construct_prompt_chat_gpt(self, user_input, system_prompt, model_config):
-        if model_config == "gpt-3.5-turbo": #gpt-3.5 tends to ignore system_prompt [verify if changed]
+        if model_config == "gpt-3.5-turbo": #gpt-3.5 tends to ignore system_prompt [shall verify if changed w/ later versions]
             user_input = system_prompt + ". " + user_input
             system_prompt = ""
         prompt_instructions = self.read_prompt_instructions().strip()
@@ -48,7 +46,6 @@ class OpenAIRedactor:
             "content": system_prompt
             }]
         size_of_messages = util.get_token_length(json.dumps(messages))
-        logging.info(f"prompt_size_in_message: {size_of_messages}")
         if len(prompt_qa_examples) > 0:           
             if len(prompt_instructions) > 0:            
                 messages.append({
@@ -93,9 +90,7 @@ class OpenAIRedactor:
 
     def call_openAi_redact(self, user_input: str, system_prompt: str, model_config: str = "gpt-3.5-turbo", max_completion_length: int = 2048, timeout: int = "") -> str:
         messages = self.construct_prompt_chat_gpt(user_input, system_prompt, model_config)
-        logging.info(f"Messages_prompt: {messages}")
         size_of_messages = util.get_token_length(json.dumps(messages))
-        logging.info(f"Messages_length_as_json_dump: {size_of_messages}")
         
         try:
                 completion = openai.ChatCompletion.create(
@@ -106,7 +101,6 @@ class OpenAIRedactor:
                         request_timeout=timeout,
                 )
                 response_toolbot = completion['choices'][0]['message']['content']
-                logging.info(f"completion: {completion}")
 
                 return response_toolbot
 
