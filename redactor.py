@@ -1,29 +1,30 @@
 import datetime
 from redact_text_w_openAI import OpenAIRedactor
 import util
-import npyscreen
-from main import BaseView
-from main import ViewInterface
+from transcribe_redact_TUI import BaseView
+from transcribe_redact_TUI import ViewInterface
 import os
+from dotenv import set_key
+import npyscreen
 import ui_const
 
 MAX_TOKEN_LENGTHS = {
-    "gpt-4": 8192,
-    "gpt-3.5-turbo": 4096,
+    "gpt-4": 3999, #8192 is the proper value, but this is unusable in the afternoons in CEST timezone
+    "gpt-3.5-turbo": 3999, #4096 is the proper value
 }     
-SYSTEM_PROMPT = "You are a silent AI tool helping to format the long texts that were transcribed from speeches. You format the text as follows: you break up the text into paragraphs, correct and redact. You may receive the text in multiple batches. Do not include your own text in the response, and use the original language of the text."
-REQUEST_TIMEOUT = 300
+SYSTEM_PROMPT_DEF = "You are a silent AI tool helping to format the long texts that were transcribed from speeches." \
+    "You format the text follows: you break up the text into paragraphs, correct and redact. You may receive the text in multiple batches." \
+    " Do not include your own text in the response, and use the original language of the text."
+REQUEST_TIMEOUT = 600
 
-NAME_REDACTBUTTON_EN = "Redact"
+
 MSG_REDACTIONCOMPLETE_EN = "Redaction complete!"
 MSG_FILENOTEXIST_EN = "The file {} does not exist."
 MSG_REDACTIONSTARTED_EN = "Redaction started ... A response could take up to " + str(round(REQUEST_TIMEOUT/60)) + " minutes per chunk. Number of chunks: {}"
-MSG_CHUNKSTARTED_EN = "{:.2f}. chunk, started: {}"
+MSG_CHUNKSTARTED_EN = "{:.2f}. chunk, started: {}. Config: {}"
 MSG_REDACTEDCHUNKRESULT_EN = "[Redacted chunk: [{}]"
 MSG_CHUNKPROCESSINGTIME_EN = "{:.2f}. chunk processing time: {}"
 
-current_model_config = "gpt-4"
-token_max_length = MAX_TOKEN_LENGTHS[current_model_config]
 ratio_of_total_max_prompt = 0.5
 
 class RedactorView(BaseView, ViewInterface):
@@ -34,8 +35,15 @@ class RedactorView(BaseView, ViewInterface):
         self.presenter = RedactorPresenter(self)
 
     def create(self):
-        self.form.redact_button = self.form.add(npyscreen.ButtonPress, name=NAME_REDACTBUTTON_EN, hidden=True, rely=7, relx=13, max_height=1, max_width=10)
+        from npyscreen import ButtonPress
+        from ui_const import NAME_REDACTBUTTON_EN
+        self.form.redact_button = self.form.add(ButtonPress, name=NAME_REDACTBUTTON_EN, hidden=True, rely=7, relx=2, max_height=1)
         self.form.redact_button.whenPressed = self.on_redact
+        self.redact_prompt = ""
+        self.redact_prompt_button = RedactPromptButton(self.form)
+        self.redact_prompt_button.create()
+        self.redact_prompt_setter = SetRedactPrompt(self.form)
+        self.redact_prompt_setter.create()
     
     def on_redact(self):
         self.presenter.handle_redaction()
@@ -59,18 +67,21 @@ class RedactorModel:
             self.view.display_message_confirm(MSG_FILENOTEXIST_EN.format(output_file))
             return ''
         text = ''
-        with open(output_file, 'r') as file:
+        with open(output_file, 'r', encoding="utf-8", errors="ignore") as file:
             text = file.read()
         
         chunks = util.create_chunks(text, int(ratio_of_total_max_prompt * token_max_length))
-        self.view.display_message_queue(MSG_REDACTIONSTARTED_EN .format(len(chunks)))
+        self.view.display_message_queue(MSG_REDACTIONSTARTED_EN.format(len(chunks)))
         redacted_text_list = []
 
         for i, chunk in enumerate(chunks, start=1):            
             start_time = datetime.datetime.now()
-            self.view.display_message_queue(MSG_CHUNKSTARTED_EN.format(i, start_time.strftime("%H:%M:%S")))
-            redact_with_OpenAI=OpenAIRedactor(apikey)
-            redacted_chunk = redact_with_OpenAI.call_openAi_redact(user_input=chunk, system_prompt = SYSTEM_PROMPT, model_config=current_model_config, max_completion_length = int((1 - ratio_of_total_max_prompt) * token_max_length) - 1, timeout=REQUEST_TIMEOUT)
+            self.view.display_message_queue(MSG_CHUNKSTARTED_EN.format(i, start_time.strftime("%H:%M:%S"), current_model_config))
+            redact_with_OpenAI=OpenAIRedactor(apikey)            
+            try:
+                redacted_chunk = redact_with_OpenAI.call_openAi_redact(user_input=chunk, system_prompt = SYSTEM_PROMPT_DEF, model_config=current_model_config, max_completion_length = int((1 - ratio_of_total_max_prompt) * token_max_length) - 1, timeout=REQUEST_TIMEOUT)
+            except Exception as e:
+                self.view.display_message_queue(str(e))
             end_time = datetime.datetime.now()
             time_difference = end_time - start_time
             if redacted_chunk is None:
@@ -88,19 +99,71 @@ class RedactorPresenter:
         self.model = RedactorModel(view)
         
     def handle_redaction(self): 
-        output_file = self.view.form.output_file_display.value       
+        output_file = self.view.form.output_file_display.value
+        token_max_length = MAX_TOKEN_LENGTHS[self.view.form.current_model_config]
         start_time = datetime.datetime.now()
-        redacted_text = self.model.redact(output_file, self.view.api_key, current_model_config, token_max_length, ratio_of_total_max_prompt) 
+        redacted_text = self.model.redact(output_file, self.view.api_key, self.view.form.current_model_config, token_max_length, ratio_of_total_max_prompt) 
         if redacted_text == "":
             return
         self._write_redacted_file(output_file=output_file, redacted_text=redacted_text)
-        self.view.display_message_confirm(MSG_REDACTIONCOMPLETE_EN)
+        self.view.display_message_queue(MSG_REDACTIONCOMPLETE_EN)
        
     def _write_redacted_file(self, output_file: str, redacted_text: str):
         output_dir, output_filename = os.path.split(output_file)
         redacted_filename = "redacted_" + output_filename
         redacted_output_file = os.path.join(output_dir, redacted_filename)
 
-        with open(redacted_output_file, "w", encoding="utf-8") as file:
+        with open(redacted_output_file, "w", encoding="utf-8", errors="ignore") as file:
             file.write(redacted_text)
+
+class RedactPromptButton:
+    def __init__(self, form):
+        self.form = form
+    def create(self):
+        selected_value = ui_const.NAME_REDACTPROMPT_EN
+        if os.getenv('REDACT_PROMPT') is not None:
+            selected_value = ui_const.NAME_REDACTPROMPT_EN + "*"
+        self.form.initial_prompt_button = self.form.add(npyscreen.ButtonPress, name=selected_value, rely=7, relx=25)
+        self.form.initial_prompt_button.whenPressed = self.switch_to_redact_prompt_form
+    def switch_to_redact_prompt_form(self):
+        self.form.parentApp.switchForm('REDACT_PROMPT')    
+
+    def get_cb_gpt_4_value_from_env(self) -> bool:
+        checkbox_value_str = os.getenv("GPT4")
+        if checkbox_value_str == "True":
+            return True
+        else:
+            return False
     
+    def cb_gpt_4_creator(self):
+        checkbox_value_bool = self.get_cb_gpt_4_value_from_env()
+        self.form.cb_gpt4 = self.form.add(npyscreen.Checkbox, name=ui_const.NAME_GPT4CBOX_EN, value=checkbox_value_bool, help= ui_const.HELP_GPT4CBOX_EN, rely=8, relx=30)
+        self.form.cb_gpt4.whenToggled = self.update_cb_gpt4()
+    
+    def update_cb_gpt4(self):
+        if self.form.cb_gpt4.value:
+            set_key(".env", "GPT4", "True")
+            self.form.current_model_config = "gpt-4"
+        else:
+            set_key(".env", "GPT4", "False")
+            self.form.current_model_config = "gpt-3.5-turbo"
+
+class SetRedactPrompt(npyscreen.ActionPopup):
+    def create(self):
+        import ui_const
+        self.add(npyscreen.MultiLineEdit, name = ui_const.NAME_REDACTPROMPT_EN, begin_entry_at=0, value=self.get_redact_prompt(), help = ui_const.HELP_SETINITIALPROMPT_EN, autowrap=True)
+        #softwrap/autowrap does not work for some reasons on Win
+
+    def get_redact_prompt(self) -> str:
+        prompt = os.getenv('REDACT_PROMPT')
+        if not prompt:
+            prompt = SYSTEM_PROMPT_DEF
+        return prompt.strip()
+    
+    def on_ok(self):
+        set_key('.env', "REDACT_PROMPT", util.get_prompt_value_formatted(self.get_widget(0).value))
+        self.parentApp.switchFormPrevious()
+    
+    def on_cancel(self):
+        self.redact_prompt  = ""
+        self.parentApp.switchFormPrevious()
