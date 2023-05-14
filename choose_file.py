@@ -2,12 +2,9 @@ import os
 from typing import NamedTuple
 from typing import Tuple
 import npyscreen
-from main import BaseView
+from transcribe_redact_TUI import BaseView
 import ui_const
-
-ACCEPTED_WHISPER_EXTENSIONS = "*.mp3;*.m4a;*.mpga;*.wav;*.webm"
-accepted_whisper_extensions_list = ACCEPTED_WHISPER_EXTENSIONS.split(";")
-ACCEPTED_WHISPER_FILESIZE = 25*1024*1024
+from util import check_split_files_presence_under_input_file
 
 
 class ChooseFileForm(npyscreen.ActionForm, BaseView):
@@ -22,8 +19,8 @@ class ChooseFileForm(npyscreen.ActionForm, BaseView):
     def create(self):
         self.file_widget = self.add(npyscreen.TitleFilename, name=ui_const.NAME_TITLEFILENAME_EN.format(self.mode),
                                      select_dir=False, must_exist=True,
-                                     mask=ACCEPTED_WHISPER_EXTENSIONS if self.mode == 'input' else "*.txt")
-        self.add(npyscreen.FixedText, value=ui_const.MSG_PRESSTABTOBROWSE_EN, editable=False, color='CONTROL')
+                                     mask=ui_const.ACCEPTED_WHISPER_EXTENSIONS if self.mode == 'input' else "*.txt")
+        self.add(npyscreen.FixedText, value=ui_const.MSG_PRESSTABTOBROWSE_EN, hidden=False, color='CONTROL', editable=False)
         self.selected_file = None
     
     def validate_output_file(self, filename: str)-> bool: 
@@ -45,28 +42,32 @@ class ChooseFileForm(npyscreen.ActionForm, BaseView):
     def is_extension_accepted(self, filename: str) -> bool:
         _, file_ext = os.path.splitext(filename)
         file_ext = f"*{file_ext}" 
-        return file_ext in accepted_whisper_extensions_list
+        return file_ext in ui_const.accepted_whisper_extensions_list
     
     def is_length_below_limit(self, filename: str)-> Tuple[bool, str]:
-        if os.path.getsize(filename) < ACCEPTED_WHISPER_FILESIZE:
+        if os.path.getsize(filename) < ui_const.ACCEPTED_WHISPER_FILESIZE:
             return True, filename
         else:
             file_size_actual = os.path.getsize(filename)
             file_size_in_MB = int(file_size_actual / 1024 ** 2)
-            max_file_size = int(ACCEPTED_WHISPER_FILESIZE / 1024 ** 2)
-            self.display_message_confirm(ui_const.MSG_AUDIOTOOLARGE_EN.format(file_size_in_MB, max_file_size))
-            notify_result = self.display_message_ok_cancel(ui_const.MSG_SPLITAUDIO_EN.format(filename))
+            max_file_size_in_MB = int(ui_const.ACCEPTED_WHISPER_FILESIZE / 1024 ** 2)
+            if check_split_files_presence_under_input_file(filename, ui_const.ACCEPTED_WHISPER_FILESIZE):
+                return True, filename
+            self.display_message_confirm(ui_const.MSG_AUDIOTOOLARGE_EN.format(file_size_in_MB, max_file_size_in_MB))
+            notify_result = self.display_message_yes_no(ui_const.MSG_SPLITAUDIO_EN.format(filename))
             if not notify_result:
-                return False
+                return False, filename
             else:                
                 import split_files
-                chunks = split_files.split_audio(filename, ACCEPTED_WHISPER_FILESIZE)
+                chunks = split_files.split_audio(filename, ui_const.ACCEPTED_WHISPER_FILESIZE)
                 if not os.access(filename, os.W_OK):
                         self.display_message_confirm(ui_const.MSG_DIRECTORYNOTWRITABLE_EN.format(filename))
-                        return False
+                        return False, filename
                 for i, chunk in enumerate(chunks):
                     filename_root, file_ext = os.path.splitext(filename)
-                    chunk.export(f"{filename_root}_{i}{file_ext}", format=file_ext[1:])
+                    filename_split = f"{filename_root}_{i}{file_ext}"
+                    chunk.export(filename_split, format=file_ext[1:])
+                    self.parentApp.getForm("MAIN").did_split.append(filename_split)
             return True, filename
         
     def validate_input_file(self, filename: str)-> bool: 
@@ -76,7 +77,7 @@ class ChooseFileForm(npyscreen.ActionForm, BaseView):
             self.display_message_confirm(ui_const.MSG_FILENOTEXIST_EN.format(filename), title="Error")
             return False
         else:
-            self.display_message_confirm(ui_const.MSG_EXTENSIONNOTACCEPTED_EN.format(filename, ACCEPTED_WHISPER_EXTENSIONS))
+            self.display_message_confirm(ui_const.MSG_EXTENSIONNOTACCEPTED_EN.format(filename, ui_const.ACCEPTED_WHISPER_EXTENSIONS))
             return False
         
     def on_ok(self):
@@ -85,13 +86,13 @@ class ChooseFileForm(npyscreen.ActionForm, BaseView):
             
         if self.mode == 'input':
             if self.validate_input_file(self.selected_file):                    
-                    is_length_below, new_filename = self.is_length_below_limit(self.selected_file)
-                    if is_length_below:
-                        self.selected_file = new_filename
-                        main_form.input_file = self.selected_file
-                        self.parentApp.setNextForm("MAIN")
-                        main_form.input_file_display.value = self.selected_file
-                        main_form.input_file_display.update()
+                    #is_length_below, new_filename = self.is_length_below_limit(self.selected_file)
+                    #if is_length_below:
+                        #self.selected_file = new_filename
+                main_form.input_file = self.selected_file
+                self.parentApp.setNextForm("MAIN")
+                main_form.input_file_display.value = self.selected_file
+                main_form.input_file_display.update()
             else:
                 self.parentApp.setNextForm("MISSING_FILE")
         elif self.mode == 'output':
