@@ -4,6 +4,7 @@ import redact_text_w_openAI
 import json
 import logging
 from typing import List
+from redactor import SYSTEM_PROMPT
 import os
 
 DEF_ENCODING_NAME = "cl100k_base"
@@ -11,7 +12,7 @@ DEF_MAX_CHUNK_SIZE = 8192
 
 def get_own_prompt_length() -> int:
     redactor = redact_text_w_openAI.OpenAIRedactor("")
-    size = get_token_length(redact_text_w_openAI.SYSTEM_PROMPT)
+    size = get_token_length(SYSTEM_PROMPT)
     size += get_token_length(redactor.read_prompt_instructions())
     size += get_token_length(json.dumps(redactor.read_prompt_qa_examples()))
     logging.info("Own prompt size: {}".format(size))
