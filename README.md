@@ -9,8 +9,11 @@ Cons of GPT-4: It is much slower than GPT-3.5, and usually I cannot even use 8K 
 Cons of GPT-3.5: often in redacts in English, because the system prompt is used in English, so this changes the original language and often ignores instructions. Due to ignoring system prompts, with GPT-3.5, system prompt is included in user prompt instead, but still tends to ignore it.
 
 #TODO:  
-        RealtimeOutput is not scrolling
-        A "PySimpleGUI" version:
+        - button to set max token length
+        - alternative TUI for MultiLineEdit?
+        - "in progress" mark?
+        - RealtimeOutput is not scrolling
+        - A "PySimpleGUI" version:
         There are npyscreen problems with win_npcurses(?):
                 - non-ASCII characters cannot be entered via keyboard
                 - user cannot reach button helps (F1 does not work with active buttons, only w/ forms)
