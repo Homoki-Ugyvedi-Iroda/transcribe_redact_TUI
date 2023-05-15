@@ -8,8 +8,10 @@ On the first run of transcription, the app downloads models, that takes a LONG t
 
 Currently source code only:
 
-```pip install -r requirements.txt
-python transcribe_redact_TUI.py```
+```
+pip install -r requirements.txt
+python transcribe_redact_TUI.py
+```
 
 ## Experiences using the Whisper model
 
@@ -22,8 +24,11 @@ You can try using CUDA-compatible GPUs on your computer for speeding up the tran
 E.g. have a ten-year-old GeForce 750 Ti with 2 GB of RAM, and the medium model is too large for that.
 
 See also:
+
         a) the Whisper [OpenAI paper](https://cdn.openai.com/papers/whisper.pdf) for more technical details,
-        b) the Whisper [GitHub page](https://github.com/openai/whisper)
+        
+        b) the Whisper [GitHub page](https://github.com/openai/whisper),
+        
         c) this [blogpost](https://www.assemblyai.com/blog/how-to-run-openais-whisper-speech-recognition-model/).
 
 ## Using OpenAI GPT for redaction
@@ -40,9 +45,7 @@ Even if they advertise 32K token lengths (for input and output), I cannot even u
 
 I had more success with 3K token, so that's set in the application as well.
 
-*Cons of GPT-3.5*:
-
-This provides output in the language of the prompt (the current system prompt is used in English), even if the instructions are made to provide responses in the language of the source, not the instruction.
+*Cons of GPT-3.5*: This provides output in the language of the prompt (the current system prompt is used in English), even if the instructions are made to provide responses in the language of the source, not the instruction.
 
 This makes such use often impractical, and requires rewriting the original instructions.
 
@@ -50,17 +53,17 @@ Also, due to ignoring system prompts, with GPT-3.5, system prompt is included in
 
 ## TODO:  
 
-[ ] - button to set max token length
+- [ ] button to set max token length
 
-[ ] - alternative TUI for MultiLineEdit?
+- [ ] alternative TUI for MultiLineEdit?
 
-[ ] - "in progress" mark?
+- [ ] "in progress" mark?
 
-[ ] - RealtimeOutput is not scrolling
+- [ ] RealtimeOutput is not scrolling
 
-[ ] - upload a deployable zip version (using pyinstaller)
+- [ ] upload a deployable zip version (using pyinstaller)
 
-[ ] - A "PySimpleGUI" version:
+- [ ] A "PySimpleGUI" version:
 
       There are npyscreen problems with win_npcurses(?):
                 - non-ASCII characters cannot be entered via keyboard
