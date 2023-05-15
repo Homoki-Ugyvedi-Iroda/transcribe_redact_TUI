@@ -65,7 +65,7 @@ Also, due to ignoring system prompts, with GPT-3.5, system prompt is included in
 
 - [ ] A "PySimpleGUI" version:
 
-      There are npyscreen problems with win_npcurses(?):
-                - non-ASCII characters cannot be entered via keyboard
-                - user cannot reach button helps (F1 does not work with active buttons, only w/ forms)
-                - MultiLineEdit softwrap does not work.
+There are npyscreen problems with win_npcurses(?):
+- non-ASCII characters cannot be entered via keyboard
+- user cannot reach button helps (F1 does not work with active buttons, only w/ forms)
+- MultiLineEdit softwrap does not work.
