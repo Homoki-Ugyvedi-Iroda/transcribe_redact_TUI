@@ -15,7 +15,7 @@ python transcribe_redact_TUI.py
 
 ## Experiences using the Whisper model
 
-This does not use the API, but the downloadable models, so for transcription, no data leaves your computer when using this application. There are different kinds of models available, but in Hungarian, only the biggest ("large") is usable, and even that is far from perfect. But large is much better in results compared to e.g. Google Cloud transcription services available.
+This does not use the API, but the downloadable models, so for transcription, no data leaves your computer when using this application. There are different kinds of models available, but in Hungarian, only the biggest ("large") is usable, and even that is far from perfect. But large model gives much better results compared to e.g. what Google Cloud transcription services are able to provide currently in Hungarian.
 
 The greatest is that these models are multilingual (there are English-only models, but they're out of the scope of this experiment.)
 
