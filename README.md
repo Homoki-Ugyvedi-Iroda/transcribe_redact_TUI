@@ -25,11 +25,11 @@ E.g. have a ten-year-old GeForce 750 Ti with 2 GB of RAM, and the medium model i
 
 See also:
 
-        a) the Whisper [OpenAI paper](https://cdn.openai.com/papers/whisper.pdf) for more technical details,
+1. the Whisper [OpenAI paper](https://cdn.openai.com/papers/whisper.pdf) for more technical details,
         
-        b) the Whisper [GitHub page](https://github.com/openai/whisper),
+2. the Whisper [GitHub page](https://github.com/openai/whisper),
         
-        c) this [blogpost](https://www.assemblyai.com/blog/how-to-run-openais-whisper-speech-recognition-model/).
+3. this [blogpost](https://www.assemblyai.com/blog/how-to-run-openais-whisper-speech-recognition-model/).
 
 ## Using OpenAI GPT for redaction
 
