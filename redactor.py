@@ -44,6 +44,7 @@ class RedactorView(BaseView, ViewInterface):
         self.redact_prompt_button.create()
         self.redact_prompt_setter = SetRedactPrompt(self.form)
         self.redact_prompt_setter.create()
+        
     
     def on_redact(self):
         self.presenter.handle_redaction()
@@ -58,6 +59,7 @@ class RedactorView(BaseView, ViewInterface):
                 self.form.redact_button.hidden = True
         self.form.redact_button.update()
         self.form.display()
+
 class RedactorModel:
     def __init__(self, view: RedactorView):
         self.view = view
@@ -123,23 +125,18 @@ class RedactPromptButton:
         selected_value = ui_const.NAME_REDACTPROMPT_EN
         if os.getenv('REDACT_PROMPT') is not None:
             selected_value = ui_const.NAME_REDACTPROMPT_EN + "*"
-        self.form.initial_prompt_button = self.form.add(npyscreen.ButtonPress, name=selected_value, rely=7, relx=25)
-        self.form.initial_prompt_button.whenPressed = self.switch_to_redact_prompt_form
+        self.form.transcription_prompt_button = self.form.add(npyscreen.ButtonPress, name=selected_value, rely=7, relx=25)
+        self.form.transcription_prompt_button.whenPressed = self.switch_to_redact_prompt_form
     def switch_to_redact_prompt_form(self):
-        self.form.parentApp.switchForm('REDACT_PROMPT')    
-
-    def get_cb_gpt_4_value_from_env(self) -> bool:
-        checkbox_value_str = os.getenv("GPT4")
-        if checkbox_value_str == "True":
-            return True
-        else:
-            return False
-    
-    def cb_gpt_4_creator(self):
+        self.form.parentApp.switchForm('REDACT_PROMPT')
+        
+class Gpt4CheckBox:
+    def __init__(self, form):
+        self.form = form    
+    def create(self):
         checkbox_value_bool = self.get_cb_gpt_4_value_from_env()
-        self.form.cb_gpt4 = self.form.add(npyscreen.Checkbox, name=ui_const.NAME_GPT4CBOX_EN, value=checkbox_value_bool, help= ui_const.HELP_GPT4CBOX_EN, rely=8, relx=30)
-        self.form.cb_gpt4.whenToggled = self.update_cb_gpt4()
-    
+        self.form.cb_gpt4 = self.form.add(npyscreen.Checkbox, name=ui_const.NAME_GPT4CBOX_EN, value=checkbox_value_bool, help= ui_const.HELP_GPT4CBOX_EN, rely=8, relx=30, max_width=20)
+        self.form.cb_gpt4.whenToggled = self.update_cb_gpt4    
     def update_cb_gpt4(self):
         if self.form.cb_gpt4.value:
             set_key(".env", "GPT4", "True")
@@ -147,6 +144,22 @@ class RedactPromptButton:
         else:
             set_key(".env", "GPT4", "False")
             self.form.current_model_config = "gpt-3.5-turbo"
+    
+    def get_cb_gpt_4_value_from_env(self) -> bool:
+        checkbox_value_str = os.getenv("GPT4")
+        if checkbox_value_str == "True":
+            return True
+        else:
+            return False
+
+class GptMaxTokenLengthButton:
+    def __init__(self, form):
+        self.form = form
+    def create(self):
+        self.form.gpt_max_button = self.form.add(npyscreen.ButtonPress, name=ui_const.NAME_GPTMAXBUTTON_EN, rely=8, relx=60)
+        self.form.gpt_max_button.whenPressed = self.set_gpt_max_token_length
+    def set_gpt_max_token_length(self):
+        pass
 
 class SetRedactPrompt(npyscreen.ActionPopup):
     def create(self):
