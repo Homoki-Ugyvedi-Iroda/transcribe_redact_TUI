@@ -53,9 +53,9 @@ Also, due to ignoring system prompts, with GPT-3.5, system prompt is included in
 
 ## TODO:  
 
-- [ ] button to set max token length
+- [ ] explanation re use of /static folder
 
-- [ ] alternative TUI for MultiLineEdit?
+- [ ] alternative TUI element for MultiLineEdit only
 
 - [ ] "in progress" mark?
 
