@@ -7,17 +7,19 @@ from queue import Queue
 import time
 from typing import Protocol
 import ui_const
+from lang_model_chooser import LanguageModeHandler
+        
 
 class MyApp(npyscreen.NPSAppManaged):
     def onStart(self):
-        import lang_model_prompt_chooser
-        from converter import SetInitialPrompt
+        import lang_model_chooser
+        from converter import SetTranscriptionPrompt
         from redactor import SetRedactPrompt
         self.addForm("MAIN", MainForm, name=ui_const.NAME_MAINFORM_EN)
         self.addForm("MISSING_OPENAIAPIKEY", MissingOpenAiApiKey, name=ui_const.NAME_MISSINGOPENAIKEY_EN)
-        self.addForm('CHOOSELANG', lang_model_prompt_chooser.ChooseLanguageForm, name=ui_const.NAME_CHOOSELANGUAGE_EN)
-        self.addForm('CHOOSEMODEL', lang_model_prompt_chooser.ChooseModelForm, name=ui_const.NAME_CHOOSEMODEL_EN)
-        self.addForm('INIT_PROMPT', SetInitialPrompt, name=ui_const.NAME_INITIALPROMPT_EN)
+        self.addForm('CHOOSELANG', lang_model_chooser.ChooseLanguageForm, name=ui_const.NAME_CHOOSELANGUAGE_EN)
+        self.addForm('CHOOSEMODEL', lang_model_chooser.ChooseModelForm, name=ui_const.NAME_CHOOSEMODEL_EN)
+        self.addForm('INIT_PROMPT', SetTranscriptionPrompt, name=ui_const.NAME_INITIALPROMPT_EN)
         self.addForm('REDACT_PROMPT', SetRedactPrompt, name=ui_const.NAME_REDACTPROMPT_EN)
         if not os.getenv("OPENAI_API_KEY"):
             self.setNextForm("MISSING_OPENAIAPIKEY")
@@ -25,7 +27,7 @@ class MyApp(npyscreen.NPSAppManaged):
 class MainForm(npyscreen.FormBaseNew):
     def create(self):
         from redactor import RedactorView
-        from converter import ConverterView
+        from converter import TranscriptionView
 
         load_dotenv()        
         self.output_queue = Queue()
@@ -36,44 +38,39 @@ class MainForm(npyscreen.FormBaseNew):
         self.file_handler = FileHandler(self)
         self.file_handler.create()        
         
-        self.converter = ConverterView(self)
+        self.converter = TranscriptionView(self)
         self.converter.create()
         
         self.redactor = RedactorView(self, api_key=os.getenv("OPENAI_API_KEY"))
         self.redactor.create()       
         
-        self.lang_model_creator()  
-        self.cbCUDA_creator()
-        self.redactor.redact_prompt_button.cb_gpt_4_creator()
-
+        self.languagemode = LanguageModeHandler(self)
+        self.languagemode.create()
+        
+        self.cb_cuda = CudaCheckbox(self)
+        self.cb_cuda.create()
+        
+        self.set_tab_order(self.form)
+        
         self.output_handler = OutputHandler(self, self.output_queue)
         self.output_handler.create()
                 
         y, x = self.useable_space()
         self.exit_button = self.add(npyscreen.ButtonPress, name=ui_const.NAME_EXITBUTTON_EN, rely=y-3, relx=x-10)
         self.exit_button.whenPressed = self.exit_application
-
-    def lang_model_creator(self):
-        from lang_model_prompt_chooser import ChooseLanguageButton, ChooseModelButton
-        self.language = ChooseLanguageButton(self)
-        self.language.create()
-        self.model = ChooseModelButton(self)
-        self.model.create()
-
-    def cbCUDA_creator(self):        
-        checkbox_value_str = os.getenv("CUDA")
-        if checkbox_value_str == "True":
-            checkbox_value_bool = True
-        else:
-            checkbox_value_bool = False
-        self.cuda_cb = self.add(npyscreen.Checkbox, name=ui_const.NAME_CUDACBOX_EN, value=checkbox_value_bool, help = ui_const.HELP_TRYCUDA_EN, relx=4, max_width=23)
-        self.cuda_cb.whenToggled = self.update_cuda_cb_save_to_env
     
-    def update_cuda_cb_save_to_env(self):
-        if self.cuda_cb.value:
-            set_key(".env", "CUDA", "True")
-        else:
-            set_key(".env", "CUDA", "False")
+    def set_tab_order(self, form):
+        self.form = form
+        self.form.choose_input_button.set_next(self.form.choose_output_button)
+        self.form.choose_output_button.set_next(self.form.convert_button)
+        self.form.convert_button.set_next(self.form.transcription_prompt_button)
+        self.form.transcription_prompt_button.set_next(self.form.redact_button)
+        self.form.redact_button.set_next(self.form.languagemode.language_button)
+        self.form.language.language_button.set_next(self.form.languagemodel.model_button)
+        self.form.model.model_button.name.set_next(self.form.cuda_cb)
+        self.form.cuda_cb.set_next(self.form.cb_gpt4)
+        self.form.cb_gpt4.set_next(self.form.set_max_token_length_button)   
+       
     
     def exit_application(self):
         split_files_list = self.parentApp.getForm("MAIN").did_split
@@ -86,7 +83,7 @@ class MainForm(npyscreen.FormBaseNew):
                     pass                
         self.output_handler.stop_periodic_update()
         self.parentApp.switchForm(None)
- 
+
 class FileHandler:
     def __init__(self, form):
         self.form = form
@@ -148,6 +145,21 @@ class BaseView(ViewInterface):
     def display_message_yes_no(self, message)-> bool:
         return npyscreen.notify_yes_no(message)
 
+class CudaCheckbox:    
+    def create(self):        
+        checkbox_value_str = os.getenv("CUDA")
+        if checkbox_value_str == "True":
+            checkbox_value_bool = True
+        else:
+            checkbox_value_bool = False
+        self.cuda_cb = self.add(npyscreen.Checkbox, name=ui_const.NAME_CUDACBOX_EN, value=checkbox_value_bool, help = ui_const.HELP_TRYCUDA_EN, relx=4, max_width=23)
+        self.cuda_cb.whenToggled = self.update_cuda_cb_save_to_env
+    
+    def update_cuda_cb_save_to_env(self):
+        if self.cuda_cb.value:
+            set_key(".env", "CUDA", "True")
+        else:
+            set_key(".env", "CUDA", "False")
     
 class MissingOpenAiApiKey(npyscreen.ActionForm):
     def create(self):

@@ -24,7 +24,8 @@ class ChooseFileForm(npyscreen.ActionForm, BaseView):
         self.selected_file = None
     
     def validate_output_file(self, filename: str)-> bool: 
-        if os.path.exists(filename):
+        main_form=self.parentApp.getForm("MAIN")
+        if os.path.exists(filename) and main_form.input_file is not None:
             notify_result = self.display_message_ok_cancel(ui_const.MSG_VALIDATEOUTPUT_OVERWRITE_EN.format(filename))
             if not notify_result:
                 return False

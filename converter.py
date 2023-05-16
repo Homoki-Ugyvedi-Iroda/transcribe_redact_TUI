@@ -13,19 +13,19 @@ MSG_TRANSCRIPTIONFINISHED_EN = "Conversion complete! \n"
 MSG_CONVERTINGMULTIPLE_EN = "Converting multiple files ({})... \n"
 MSG_CONVERTINGSINGLE_EN = "Converting file: ({})... \n"
 
-class ConverterView(BaseView, ViewInterface):
+class TranscriptionView(BaseView, ViewInterface):
 
     def __init__(self, form):
         super().__init__(form)
-        self.presenter = ConverterPresenter(self)
+        self.presenter = TranscriptionPresenter(self)
 
     def create(self):
         self.form.convert_button = self.form.add(ButtonPress, name=ui_const.NAME_TRANSCRIBEBUTTON_EN, hidden=True, rely=6, relx=2, max_height=1, max_width=10)
         self.form.convert_button.whenPressed = self.on_convert
         self.initial_prompt = ""
-        self.initial_prompt_button = InitialPromptButton(self.form)
-        self.initial_prompt_button.create()
-        self.initial_prompt_setter = SetInitialPrompt(self.form)
+        self.transcription_prompt_button = TranscriptionPromptButton(self.form)
+        self.transcription_prompt_button.create()
+        self.initial_prompt_setter = SetTranscriptionPrompt(self.form)
         self.initial_prompt_setter.create()
 
 
@@ -42,10 +42,10 @@ class ConverterView(BaseView, ViewInterface):
         self.form.display()
         
     def on_convert(self):
-        self.presenter.handle_conversion()
+        self.presenter.handle_transcription()
         
-class ConverterModel:
-    def __init__(self, view: ConverterView):
+class TranscriptionModel:
+    def __init__(self, view: TranscriptionView):
         self.view = view
     
     def get_language(self) -> str:
@@ -95,12 +95,12 @@ class ConverterModel:
         except Exception as e:
             self.view.display_message_queue(str(e))
 
-class ConverterPresenter:
-    def __init__(self, view: ConverterView):
+class TranscriptionPresenter:
+    def __init__(self, view: TranscriptionView):
         self.view = view
-        self.model = ConverterModel(view)
+        self.model = TranscriptionModel(view)
         
-    def handle_conversion(self):
+    def handle_transcription(self):
         from transcribe_redact_TUI import CustomStdout
         input_file = self.view.form.input_file_display.value
         output_file = self.view.form.output_file_display.value      
@@ -111,19 +111,19 @@ class ConverterPresenter:
                 self.model.transcribe(input_file, output_file)
             self.view.display_message_queue(MSG_TRANSCRIPTIONFINISHED_EN)
         
-class InitialPromptButton:
+class TranscriptionPromptButton:
     def __init__(self, form):
         self.form = form
     def create(self):
         selected_value = ui_const.NAME_INITIALPROMPT_EN
         if os.getenv('INIT_PROMPT') is not None:
             selected_value = ui_const.NAME_INITIALPROMPT_EN + "*"
-        self.form.initial_prompt_button = self.form.add(ButtonPress, name=selected_value, rely=6, relx=25)
-        self.form.initial_prompt_button.whenPressed = self.switch_to_initial_prompt_form        
+        self.form.transcription_prompt_button = self.form.add(ButtonPress, name=selected_value, rely=6, relx=25)
+        self.form.transcription_prompt_button.whenPressed = self.switch_to_initial_prompt_form        
     def switch_to_initial_prompt_form(self):
         self.form.parentApp.switchForm('INIT_PROMPT')    
     
-class SetInitialPrompt(ActionPopup):
+class SetTranscriptionPrompt(ActionPopup):
     def create(self):
         self.add(MultiLineEdit, name = ui_const.NAME_INITIALPROMPTTEXTBOX_EN, begin_entry_at=0, value=os.getenv('INIT_PROMPT'), \
             help = ui_const.HELP_SETINITIALPROMPT_EN, autowrap=True)
