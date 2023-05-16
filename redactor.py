@@ -9,8 +9,8 @@ import npyscreen
 import ui_const
 
 MAX_TOKEN_LENGTHS = {
-    "gpt-4": 3999, #8192 is the proper value, but this is unusable in the afternoons in CEST timezone
-    "gpt-3.5-turbo": 3999, #4096 is the proper value
+    "gpt-4": 8192, #8192 is the proper value, but this is unusable in the afternoons in CEST timezone
+    "gpt-3.5-turbo": 4096
 }     
 SYSTEM_PROMPT_DEF = "You are a silent AI tool helping to format the long texts that were transcribed from speeches." \
     "You format the text follows: you break up the text into paragraphs, correct and redact. You may receive the text in multiple batches." \
@@ -101,8 +101,10 @@ class RedactorPresenter:
         self.model = RedactorModel(view)
         
     def handle_redaction(self): 
-        output_file = self.view.form.output_file_display.value
-        token_max_length = MAX_TOKEN_LENGTHS[self.view.form.current_model_config]
+        output_file = self.view.form.output_file_display.value        
+        token_max_length = int(os.getenv("MAXTOKENLENGTH"))
+        if token_max_length is None:
+            token_max_length = 3999
         start_time = datetime.datetime.now()
         redacted_text = self.model.redact(output_file, self.view.api_key, self.view.form.current_model_config, token_max_length, ratio_of_total_max_prompt) 
         if redacted_text == "":
@@ -128,8 +130,28 @@ class RedactPromptButton:
         self.form.transcription_prompt_button = self.form.add(npyscreen.ButtonPress, name=selected_value, rely=7, relx=25)
         self.form.transcription_prompt_button.whenPressed = self.switch_to_redact_prompt_form
     def switch_to_redact_prompt_form(self):
-        self.form.parentApp.switchForm('REDACT_PROMPT')
-        
+        self.form.parentApp.switchForm('REDACT_PROMPT')        
+
+class SetRedactPrompt(npyscreen.ActionPopup):
+    def create(self):
+        import ui_const
+        self.add(npyscreen.MultiLineEdit, name = ui_const.NAME_REDACTPROMPT_EN, begin_entry_at=0, value=self.get_redact_prompt(), help = ui_const.HELP_SETINITIALPROMPT_EN, autowrap=True)
+        #softwrap/autowrap does not work for some reasons on Win
+
+    def get_redact_prompt(self) -> str:
+        prompt = os.getenv('REDACT_PROMPT')
+        if not prompt:
+            prompt = SYSTEM_PROMPT_DEF
+        return prompt.strip()
+    
+    def on_ok(self):
+        set_key('.env', "REDACT_PROMPT", util.get_prompt_value_formatted(self.get_widget(0).value))
+        self.parentApp.switchFormPrevious()
+    
+    def on_cancel(self):
+        self.redact_prompt  = ""
+        self.parentApp.switchFormPrevious()
+
 class Gpt4CheckBox:
     def __init__(self, form):
         self.form = form    
@@ -151,32 +173,45 @@ class Gpt4CheckBox:
             return True
         else:
             return False
-
+    
+    @staticmethod
+    def get_model_from_gpt_4_env() -> str:
+        value_str = os.getenv("GPT4")
+        if value_str == "True":
+            return "gpt-4"
+        else:
+            return "gpt-3.5-turbo"
+        
 class GptMaxTokenLengthButton:
     def __init__(self, form):
         self.form = form
     def create(self):
         self.form.gpt_max_button = self.form.add(npyscreen.ButtonPress, name=ui_const.NAME_GPTMAXBUTTON_EN, rely=8, relx=60)
-        self.form.gpt_max_button.whenPressed = self.set_gpt_max_token_length
-    def set_gpt_max_token_length(self):
-        pass
-
-class SetRedactPrompt(npyscreen.ActionPopup):
-    def create(self):
+        self.form.gpt_max_button.whenPressed = self.switch_to_set_gpt_max_token_length
+    def switch_to_set_gpt_max_token_length(self):
+        self.form.parentApp.switchForm('MAXTOKENLENGTH')
+        
+class SetGptMaxTokenLength(npyscreen.ActionPopup):
+    def create(self):        
         import ui_const
-        self.add(npyscreen.MultiLineEdit, name = ui_const.NAME_REDACTPROMPT_EN, begin_entry_at=0, value=self.get_redact_prompt(), help = ui_const.HELP_SETINITIALPROMPT_EN, autowrap=True)
-        #softwrap/autowrap does not work for some reasons on Win
-
-    def get_redact_prompt(self) -> str:
-        prompt = os.getenv('REDACT_PROMPT')
-        if not prompt:
-            prompt = SYSTEM_PROMPT_DEF
-        return prompt.strip()
-    
+        self.add(npyscreen.Textfield, name = ui_const.NAME_GPTMAXLENGTHINPUT_EN, begin_entry_at=0, value=str(self.get_gpt_max_token_length()), max_width=6)        
     def on_ok(self):
-        set_key('.env', "REDACT_PROMPT", util.get_prompt_value_formatted(self.get_widget(0).value))
+        current_model = self.parentApp.getForm("MAIN").current_model_config        
+        input_value = self.get_widget(0).value
+        if input_value.isdigit():
+            input_value = int(input_value)
+            if input_value > MAX_TOKEN_LENGTHS[current_model]:
+                input_value = MAX_TOKEN_LENGTHS[current_model]
+            set_key('.env', "MAXTOKENLENGTH", str(input_value))
+            self.parentApp.switchFormPrevious()
+                
+    def on_cancel(self):
         self.parentApp.switchFormPrevious()
     
-    def on_cancel(self):
-        self.redact_prompt  = ""
-        self.parentApp.switchFormPrevious()
+    def get_gpt_max_token_length(self) -> int:
+        current_model = self.parentApp.getForm("MAIN").current_model_config
+        if os.getenv("MAXTOKENLENGTH") is not None:
+            length = int(os.getenv("MAXTOKENLENGTH"))
+            if length is not None:
+                return length        
+        return MAX_TOKEN_LENGTHS[current_model]

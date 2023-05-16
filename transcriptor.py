@@ -20,8 +20,8 @@ class TranscriptionView(BaseView, ViewInterface):
         self.presenter = TranscriptionPresenter(self)
 
     def create(self):
-        self.form.convert_button = self.form.add(ButtonPress, name=ui_const.NAME_TRANSCRIBEBUTTON_EN, hidden=True, rely=6, relx=2, max_height=1, max_width=10)
-        self.form.convert_button.whenPressed = self.on_convert
+        self.form.transcriptor_button = self.form.add(ButtonPress, name=ui_const.NAME_TRANSCRIBEBUTTON_EN, hidden=True, rely=6, relx=2, max_height=1)
+        self.form.transcriptor_button.whenPressed = self.on_transcription
         self.initial_prompt = ""
         self.transcription_prompt_button = TranscriptionPromptButton(self.form)
         self.transcription_prompt_button.create()
@@ -32,16 +32,16 @@ class TranscriptionView(BaseView, ViewInterface):
     def update_visibility(self, visible: bool=None):
         main_form=self.form.parentApp.getForm("MAIN")
         if visible is not None:
-            self.form.convert_button.hidden = not visible
+            self.form.transcriptor_button.hidden = not visible
         else:            
             if main_form.input_file is not None and main_form.output_file is not None:
-                self.form.convert_button.hidden = False
+                self.form.transcriptor_button.hidden = False
             else:
-                self.form.convert_button.hidden = True
-        self.form.convert_button.update()
+                self.form.transcriptor_button.hidden = True
+        self.form.transcriptor_button.update()
         self.form.display()
         
-    def on_convert(self):
+    def on_transcription(self):
         self.presenter.handle_transcription()
         
 class TranscriptionModel:
@@ -74,8 +74,8 @@ class TranscriptionModel:
         return False 
     
     def transcribe(self, input_file: str, output_file: str):
-        import Whisper_convert
-        self.wh_converter = Whisper_convert.WhisperConverter()
+        import Whisper_transcript
+        self.wh_transcriptor = Whisper_transcript.WhisperConverter()
         language=self.get_language()
         model_name=self.get_model()
         initial_prompt=self.get_initial_prompt()
@@ -87,11 +87,11 @@ class TranscriptionModel:
                 self.view.display_message_queue(MSG_CONVERTINGMULTIPLE_EN.format(len(chunk_filenames)))
                 for filename in chunk_filenames:
                     self.view.display_message_queue(MSG_CONVERTINGSINGLE_EN.format(os.path.basename(filename)))
-                    self.wh_converter.whisper_convert(filename, output_file, language=language, model_name=model_name, initial_prompt=initial_prompt, CUDA=cuda)
+                    self.wh_transcriptor.whisper_convert(filename, output_file, language=language, model_name=model_name, initial_prompt=initial_prompt, CUDA=cuda)
         else: 
         '''   #We omitted the size checking code above, because offline Whisper works with 25MB+ files as well. Current limit seems to depend on GPU/CPU etc. so not using it.
         try:            
-            self.wh_converter.whisper_convert(input_file, output_file, language=language, model_name=model_name, initial_prompt=initial_prompt, CUDA=cuda)
+            self.wh_transcriptor.whisper_convert(input_file, output_file, language=language, model_name=model_name, initial_prompt=initial_prompt, CUDA=cuda)
         except Exception as e:
             self.view.display_message_queue(str(e))
 

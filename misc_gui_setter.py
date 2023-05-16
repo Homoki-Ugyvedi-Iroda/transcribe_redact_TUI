@@ -30,10 +30,12 @@ LANGUAGE_LIST.insert(0, ui_const.NAME_DETECTLANGUAGEVALUE_EN)
 MODEL_LIST = ["Tiny model","Base model","Small model","Medium model","Large model"]
 
 class LanguageModeHandler:
+    def __init__(self, form):
+        self.form = form
     def create(self):
-        self.language = ChooseLanguageButton(self)
+        self.language = ChooseLanguageButton(self.form)
         self.language.create()
-        self.model = ChooseModelButton(self)
+        self.model = ChooseModelButton(self.form)
         self.model.create()
     
 def get_env_value(env_name: str, default_name: str) -> str:
@@ -73,7 +75,7 @@ class ChooseModelButton:
     
     def create(self):
         selected_value = get_env_value("MODEL", MODEL_LIST[len(MODEL_LIST)-1])
-        self.model_button = self.form.add(npyscreen.ButtonPress, name=selected_value, rely=7, relx=66)
+        self.model_button = self.form.add(npyscreen.ButtonPress, name=selected_value, rely=7, relx=70)
         self.model_button.whenPressed = self.switch_to_choose_model_form        
     
     def switch_to_choose_model_form(self):
@@ -93,3 +95,20 @@ class ChooseModelForm(npyscreen.Popup):
         set_key('.env', "MODEL", chosen_model)
         self.parentApp.switchForm('MAIN')
 
+class CudaCheckbox:    
+    def __init__(self, form):
+        self.form = form
+    def create(self):        
+        checkbox_value_str = os.getenv("CUDA")
+        if checkbox_value_str == "True":
+            checkbox_value_bool = True
+        else:
+            checkbox_value_bool = False
+        self.cuda_cb = self.form.add(npyscreen.Checkbox, name=ui_const.NAME_CUDACBOX_EN, value=checkbox_value_bool, help = ui_const.HELP_TRYCUDA_EN, relx=4, max_width=23, rely=8)
+        self.cuda_cb.whenToggled = self.update_cuda_cb_save_to_env
+    
+    def update_cuda_cb_save_to_env(self):
+        if self.cuda_cb.value:
+            set_key(".env", "CUDA", "True")
+        else:
+            set_key(".env", "CUDA", "False")

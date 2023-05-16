@@ -2,11 +2,39 @@ import os
 from typing import NamedTuple
 from typing import Tuple
 import npyscreen
-from transcribe_redact_TUI import BaseView
 import ui_const
 from util import check_split_files_presence_under_input_file
 
 
+class FileHandler:
+    def __init__(self, form):
+        self.form = form
+
+    def create(self):
+        self.form.choose_input_button = self.form.add(npyscreen.ButtonPress, name=ui_const.NAME_AUDIOFILEBUTTON_EN)
+        self.form.choose_input_button.whenPressed = self.choose_input_file
+        self.form.input_file_display = self.form.add(npyscreen.FixedText, name=ui_const.NAME_AUDIOFILEDISPLAY_EN, editable=False)
+
+        self.form.choose_output_button = self.form.add(npyscreen.ButtonPress, name=ui_const.NAME_TEXTFILEBUTTON_EN)
+        self.form.choose_output_button.whenPressed = self.choose_output_file
+        self.form.output_file_display = self.form.add(npyscreen.FixedText, name=ui_const.NAME_TEXTFILEDISPLAY_EN, editable=False)
+    
+    def choose_input_file(self):
+        from file_handler import ChooseFileForm
+        form = ChooseFileForm(parentApp=self.form.parentApp, mode='input', help=ui_const.HELP_AUDIOFILEDISPLAY_EN)
+        form.edit()
+        self.form.input_file = form.selected_file
+        self.form.transcriptor.update_visibility()
+
+    def choose_output_file(self):
+        from file_handler import ChooseFileForm        
+        form = ChooseFileForm(parentApp=self.form.parentApp, mode='output', help=ui_const.HELP_TEXTFILEDISPLAY_EN)
+        form.edit()
+        self.form.output_file = form.selected_file
+        self.form.transcriptor.update_visibility()
+        self.form.redactor.update_visibility()
+
+from transcribe_redact_TUI import BaseView
 class ChooseFileForm(npyscreen.ActionForm, BaseView):
     class ValidationResult(NamedTuple):
         valid: bool

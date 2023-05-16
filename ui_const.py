@@ -16,6 +16,8 @@ NAME_EXITBUTTON_EN = "Exit"
 NAME_AUDIOFILEBUTTON_EN = "Choose audio file for transcription"
 NAME_AUDIOFILEDISPLAY_EN = "Audio file:"
 NAME_CUDACBOX_EN = "Try w/CUDA"
+NAME_GPTMAXBUTTON_EN = "Max token length"
+NAME_GPTMAXLENGTHINPUT_EN = "Set the max. token length for the redaction function"
 
 NAME_TEXTFILEBUTTON_EN = "Choose text file (output for transcription or input redaction)"
 NAME_TEXTFILEDISPLAY_EN = "Text file:"
@@ -25,7 +27,7 @@ HELP_TEXTFILEDISPLAY_EN = "This is a text file. If you transcribe, the output wi
 HELP_AUDIOFILEDISPLAY_EN = "This is the audio file of the formats accepted by Whisper that you wish to transcribe to text."
 HELP_TRYCUDA_EN = "If your computer has a GPU w/ 2GB+ RAM, and have proper drivers installed, you may " \
         "try to use that to speed up your transcription (but probably will not work...)." \
-        "~2 GB GPU was enough for small, ~8 GB needed for the large model. Tiny model is useless in most languages."
+        "~2 GB GPU was enough for small, ~10 GB needed for the large model. Tiny model is useless in most languages."
 HELP_GPT4CBOX_EN = "If your API key supports GPT-4, you can enable use of GPT-4. Although GPT-4 much slower, GPT-3.5 sometimes redacts in English, changing the original language and often ignores instructions." \
         "For this reason, with GPT-3.5, system prompt is included in user prompt."
 
