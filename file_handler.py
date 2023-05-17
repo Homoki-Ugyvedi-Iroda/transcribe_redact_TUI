@@ -4,7 +4,7 @@ from typing import Tuple
 import npyscreen
 import ui_const
 from util import check_split_files_presence_under_input_file
-
+from baseview import BaseView
 
 class FileHandler:
     def __init__(self, form):
@@ -34,7 +34,6 @@ class FileHandler:
         self.form.transcriptor.update_visibility()
         self.form.redactor.update_visibility()
 
-from transcribe_redact_TUI import BaseView
 class ChooseFileForm(npyscreen.ActionForm, BaseView):
     class ValidationResult(NamedTuple):
         valid: bool

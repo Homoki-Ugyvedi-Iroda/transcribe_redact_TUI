@@ -55,17 +55,14 @@ Also, due to ignoring system prompts, with GPT-3.5, system prompt is included in
 
 - [ ] explanation re use of /static folder
 
-- [ ] alternative TUI element for MultiLineEdit only
-
-- [ ] "in progress" mark?
+- [ ] time data for conversions?
 
 - [ ] RealtimeOutput is not scrolling
 
 - [ ] upload a deployable zip version (using pyinstaller)
 
-- [ ] A "PySimpleGUI" version:
+- [ ] A "PySimpleGUI" version?
 
-There are npyscreen problems with win_npcurses(?):
-- non-ASCII characters cannot be entered via keyboard
+There are some npyscreen problems:
+- non-ASCII characters cannot be entered via keyboard (self._last_get_ch_was_unicode always returns false for non-ascii, had to be overriden)
 - user cannot reach button helps (F1 does not work with active buttons, only w/ forms)
-- MultiLineEdit softwrap does not work.

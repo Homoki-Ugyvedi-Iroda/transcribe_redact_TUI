@@ -1,8 +1,7 @@
 import datetime
 from redact_text_w_openAI import OpenAIRedactor
 import util
-from transcribe_redact_TUI import BaseView
-from transcribe_redact_TUI import ViewInterface
+from baseview import ViewInterface, BaseView
 import os
 from dotenv import set_key
 import npyscreen
@@ -133,10 +132,11 @@ class RedactPromptButton:
         self.form.parentApp.switchForm('REDACT_PROMPT')        
 
 class SetRedactPrompt(npyscreen.ActionPopup):
+    
     def create(self):
-        import ui_const
-        self.add(npyscreen.MultiLineEdit, name = ui_const.NAME_REDACTPROMPT_EN, begin_entry_at=0, value=self.get_redact_prompt(), help = ui_const.HELP_SETINITIALPROMPT_EN, autowrap=True)
-        #softwrap/autowrap does not work for some reasons on Win
+        from npyscreen_overrides import EuMultiLineEdit
+        multiline = self.add(EuMultiLineEdit, name = ui_const.NAME_REDACTPROMPT_EN, begin_entry_at=0, value=self.get_redact_prompt(), help = ui_const.HELP_SETINITIALPROMPT_EN, autowrap=True)
+        multiline.reformat_preserve_nl()
 
     def get_redact_prompt(self) -> str:
         prompt = os.getenv('REDACT_PROMPT')
@@ -157,7 +157,7 @@ class Gpt4CheckBox:
         self.form = form    
     def create(self):
         checkbox_value_bool = self.get_cb_gpt_4_value_from_env()
-        self.form.cb_gpt4 = self.form.add(npyscreen.Checkbox, name=ui_const.NAME_GPT4CBOX_EN, value=checkbox_value_bool, help= ui_const.HELP_GPT4CBOX_EN, rely=8, relx=30, max_width=20)
+        self.form.cb_gpt4 = self.form.add(npyscreen.Checkbox, name=ui_const.NAME_GPT4CBOX_EN, value=checkbox_value_bool, help= ui_const.HELP_GPT4CBOX_EN, rely=8, relx=30, max_width=20, max_height=1)
         self.form.cb_gpt4.whenToggled = self.update_cb_gpt4    
     def update_cb_gpt4(self):
         if self.form.cb_gpt4.value:
@@ -194,7 +194,7 @@ class GptMaxTokenLengthButton:
 class SetGptMaxTokenLength(npyscreen.ActionPopup):
     def create(self):        
         import ui_const
-        self.add(npyscreen.Textfield, name = ui_const.NAME_GPTMAXLENGTHINPUT_EN, begin_entry_at=0, value=str(self.get_gpt_max_token_length()), max_width=6)        
+        self.add(npyscreen.Textfield, name = ui_const.NAME_GPTMAXLENGTHINPUT_EN, begin_entry_at=0, value=str(self.get_gpt_max_token_length()), max_width=6, max_height=1)        
     def on_ok(self):
         current_model = self.parentApp.getForm("MAIN").current_model_config        
         input_value = self.get_widget(0).value

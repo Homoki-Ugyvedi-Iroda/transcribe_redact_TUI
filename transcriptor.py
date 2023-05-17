@@ -1,7 +1,6 @@
-from transcribe_redact_TUI import BaseView
-from transcribe_redact_TUI import ViewInterface
+from baseview import ViewInterface, BaseView
 from contextlib import redirect_stdout
-from npyscreen import ActionPopup, ButtonPress, MultiLineEdit
+from npyscreen import ActionPopup, ButtonPress
 import ui_const
 import util
 import os
@@ -50,7 +49,7 @@ class TranscriptionModel:
     
     def get_language(self) -> str:
         main_form=self.view.form.parentApp.getForm("MAIN")
-        lang_name = main_form.language.language_button.name
+        lang_name = main_form.languagemodel.language.language_button.name
         if not lang_name or lang_name==ui_const.NAME_DETECTLANGUAGEVALUE_EN:
             return ""
         else:
@@ -58,7 +57,7 @@ class TranscriptionModel:
     
     def get_model(self) -> str:
         main_form=self.view.form.parentApp.getForm("MAIN")
-        model_name = main_form.model.model_button.name
+        model_name = main_form.languagemodel.model.model_button.name
         if not model_name:
             return ""
         else:
@@ -69,7 +68,7 @@ class TranscriptionModel:
         return initial_prompt
     
     def get_cuda(self) -> bool:
-        if self.view.form.cuda_cb.value == True:
+        if self.view.form.cb_cuda.cuda_cb == True:
             return True
         return False 
     
@@ -89,7 +88,9 @@ class TranscriptionModel:
                     self.view.display_message_queue(MSG_CONVERTINGSINGLE_EN.format(os.path.basename(filename)))
                     self.wh_transcriptor.whisper_convert(filename, output_file, language=language, model_name=model_name, initial_prompt=initial_prompt, CUDA=cuda)
         else: 
-        '''   #We omitted the size checking code above, because offline Whisper works with 25MB+ files as well. Current limit seems to depend on GPU/CPU etc. so not using it.
+        # We omitted the size checking code above, because offline Whisper works with 25MB+ files as well. Current limit seems to depend on GPU/CPU etc. so not using it.
+        # But later, it could make sense to reinsert these provisions    
+        '''   
         try:            
             self.wh_transcriptor.whisper_convert(input_file, output_file, language=language, model_name=model_name, initial_prompt=initial_prompt, CUDA=cuda)
         except Exception as e:
@@ -125,9 +126,10 @@ class TranscriptionPromptButton:
     
 class SetTranscriptionPrompt(ActionPopup):
     def create(self):
-        self.add(MultiLineEdit, name = ui_const.NAME_INITIALPROMPTTEXTBOX_EN, begin_entry_at=0, value=os.getenv('INIT_PROMPT'), \
-            help = ui_const.HELP_SETINITIALPROMPT_EN, autowrap=True)
-        #softwrap/autowrap does not work for some reasons on Win
+        from npyscreen_overrides import EuMultiLineEdit
+        multline = self.add(EuMultiLineEdit, name = ui_const.NAME_INITIALPROMPTTEXTBOX_EN, begin_entry_at=0, value=os.getenv('INIT_PROMPT'), \
+            help = ui_const.HELP_SETINITIALPROMPT_EN, autowrap=True)        
+        multline.reformat_preserve_nl()
         
     def on_ok(self):
         set_key('.env', "INIT_PROMPT", util.get_prompt_value_formatted(self.get_widget(0).value))
