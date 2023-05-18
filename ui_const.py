@@ -46,10 +46,10 @@ HELP_SETINITIALPROMPT_EN = "You may set an initial prompt for the transcription 
                             "You can also provide hints or wishes regarding the format of transcription."
 HELP_SETREDACTPROMPT_EN = "You may change the system prompt for the redaction (OpenAI/GPT) model. To record the default value, delete the prompt."
 
-#choose_file.py
+#file_handler.py
 NAME_TITLEFILENAME_EN = "Choose {} file:"
 MSG_PRESSTABTOBROWSE_EN = "Press TAB to browse files from the directory entered (ending with \\)"
-MSG_VALIDATEOUTPUT_OVERWRITE_EN = "The text file {} already exists. If you press 'Convert', the file will be overwritten. Press Cancel if you don't want this."
+MSG_VALIDATEOUTPUT_OVERWRITE_EN = "The text file {} already exists. If you press 'Transcript', the file will be overwritten. Press Cancel if you don't want this."
 MSG_VALIDATEOUTPUTFILE_NOTWRITABLE_EN = "The text file {} is not writable. Please choose a different file or check permissions."
 MSG_DIRECTORYNOTWRITABLE_EN = "The directory {} is not writable. Please choose a different file or check permissions."
 MSG_AUDIOTOOLARGE_EN = "The audio file size {} MB is longer than {} MB."
@@ -57,7 +57,7 @@ MSG_SPLITAUDIO_EN = "Shall I split the audio file {} into the necessary chunk si
 MSG_FILENOTEXIST_EN = "The file {} does not exist."
 MSG_EXTENSIONNOTACCEPTED_EN = "The audio file extension {} is not accepted. Please convert it to one of the accepted formats: {}."
 
-#This could not be included in Whisper_convert, due to the lag of importing whisper (and cuda)
+#This could not be included in Whisper_transcript, due to the lag of importing whisper (and cuda)
 ACCEPTED_WHISPER_EXTENSIONS = "*.mp3;*.m4a;*.mpga;*.wav;*.webm"
 accepted_whisper_extensions_list = ACCEPTED_WHISPER_EXTENSIONS.split(";")
 ACCEPTED_WHISPER_FILESIZE = 26214400 #This was around 25 MB, but it seems offline Whisper is no longer using this limit, and current limit depends on GPU/CPU etc. so not using it

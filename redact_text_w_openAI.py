@@ -1,7 +1,7 @@
 import os
 import openai
 import json
-import util
+#import util
 
 error_mapping = {
     openai.error.AuthenticationError: "The service is not accessible, please try again later! [Authentication Error]",
@@ -35,17 +35,21 @@ class OpenAIRedactor:
         return self.text_to_json(
             os.path.join(os.getcwd(), 'static', 'prompt_qa_examples.json'))    
 
-    def construct_prompt_chat_gpt(self, user_input, system_prompt, model_config):
+    def construct_prompt_chat_gpt(self, user_input, system_prompt, model_config, read_prompt = False, read_qa_examples = False):
+        prompt_instructions = ""
+        prompt_qa_examples = ""
         if model_config == "gpt-3.5-turbo": #gpt-3.5 tends to ignore system_prompt [shall verify if changed w/ later versions]
             user_input = system_prompt + ". " + user_input
             system_prompt = ""
-        prompt_instructions = self.read_prompt_instructions().strip()
-        prompt_qa_examples = self.read_prompt_qa_examples()
+        if read_prompt:
+            prompt_instructions = self.read_prompt_instructions().strip()
+        if read_qa_examples:
+            prompt_qa_examples = self.read_prompt_qa_examples()
         messages = [{
             "role": "system",
             "content": system_prompt
             }]
-        size_of_messages = util.get_token_length(json.dumps(messages))
+        #size_of_messages = util.get_token_length(json.dumps(messages))
         if len(prompt_qa_examples) > 0:           
             if len(prompt_instructions) > 0:            
                 messages.append({
@@ -89,8 +93,8 @@ class OpenAIRedactor:
 
 
     def call_openAi_redact(self, user_input: str, system_prompt: str, model_config: str = "gpt-3.5-turbo", max_completion_length: int = 2048, timeout: int = "") -> str:
-        messages = self.construct_prompt_chat_gpt(user_input, system_prompt, model_config)
-        size_of_messages = util.get_token_length(json.dumps(messages))
+        messages = self.construct_prompt_chat_gpt(user_input, system_prompt, model_config, read_qa_examples=False, read_prompt=False)
+        #size_of_messages = util.get_token_length(json.dumps(messages))
         
         try:
                 completion = openai.ChatCompletion.create(

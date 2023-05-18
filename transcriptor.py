@@ -7,10 +7,11 @@ import os
 from dotenv import set_key
 
 
-MSG_STARTTRANSCRIBE_EN = "Starting transcription... \n"
-MSG_TRANSCRIPTIONFINISHED_EN = "Conversion complete! \n"
-MSG_CONVERTINGMULTIPLE_EN = "Converting multiple files ({})... \n"
-MSG_CONVERTINGSINGLE_EN = "Converting file: ({})... \n"
+MSG_STARTTRANSCRIPTION_EN = "Starting transcription... \n"
+MSG_TRANSCRIPTIONFINISHED_EN = "Transcription complete! \n"
+MSG_TRANSCRIPTINGMULTIPLE_EN = "Transcripting multiple files ({})... \n"
+MSG_TRANSCRIPTINGGSINGLE_EN = "Transcripting file: ({})... \n"
+MSG_TRANSCRIPTIONTIME_EN = "{:.2f}. transcription processing time for this file: {}"
 
 class TranscriptionView(BaseView, ViewInterface):
 
@@ -103,15 +104,19 @@ class TranscriptionPresenter:
         
     def handle_transcription(self):
         from transcribe_redact_TUI import CustomStdout
+        from datetime import datetime
         input_file = self.view.form.input_file_display.value
         output_file = self.view.form.output_file_display.value      
 
         if input_file and output_file:
-            self.view.display_message_queue(MSG_STARTTRANSCRIBE_EN)
+            start_time = datetime.now()
+            self.view.display_message_queue(MSG_STARTTRANSCRIPTION_EN)
             with redirect_stdout(CustomStdout(self.view.form.output_queue)):
                 self.model.transcribe(input_file, output_file)
+            time_difference = datetime.datetime.now() - start_time
             self.view.display_message_queue(MSG_TRANSCRIPTIONFINISHED_EN)
-        
+            self.view.display_message_queue(MSG_TRANSCRIPTIONTIME_EN.format(time_difference))
+                    
 class TranscriptionPromptButton:
     def __init__(self, form):
         self.form = form
