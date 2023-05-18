@@ -113,7 +113,7 @@ class TranscriptionPresenter:
             self.view.display_message_queue(MSG_STARTTRANSCRIPTION_EN)
             with redirect_stdout(CustomStdout(self.view.form.output_queue)):
                 self.model.transcribe(input_file, output_file)
-            time_difference = datetime.datetime.now() - start_time
+            time_difference = datetime.now() - start_time
             self.view.display_message_queue(MSG_TRANSCRIPTIONFINISHED_EN)
             self.view.display_message_queue(MSG_TRANSCRIPTIONTIME_EN.format(time_difference))
                     
