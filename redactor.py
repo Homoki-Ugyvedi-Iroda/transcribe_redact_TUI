@@ -20,9 +20,9 @@ REQUEST_TIMEOUT = 600
 MSG_REDACTIONCOMPLETE_EN = "Redaction complete!"
 MSG_FILENOTEXIST_EN = "The file {} does not exist."
 MSG_REDACTIONSTARTED_EN = "Redaction started ... A response could take up to " + str(round(REQUEST_TIMEOUT/60)) + " minutes per chunk. Number of chunks: {}"
-MSG_CHUNKSTARTED_EN = "{:.2f}. chunk, started: {}. Config: {}"
+MSG_CHUNKSTARTED_EN = "{}. chunk, started: {}. Config: {}"
 MSG_REDACTEDCHUNKRESULT_EN = "[Redacted chunk: [{}]"
-MSG_CHUNKPROCESSINGTIME_EN = "{:.2f}. chunk processing time: {}"
+MSG_CHUNKPROCESSINGTIME_EN = "{}. chunk processing time: {}"
 
 ratio_of_total_max_prompt = 0.5
 
