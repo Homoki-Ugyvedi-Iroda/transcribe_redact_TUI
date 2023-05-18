@@ -54,7 +54,7 @@ Also, due to ignoring system prompts, with GPT-3.5, system prompt is included in
 There are two empty files in the /static folder that are not used in this application: 
 
 - prompt_qa_examples.json could be used for chat examples to submit to the LLM (not really useful for the redaction purpose, so not used in the application),
-- 
+
 - prompt_instructions.txt is used for a prefixed prompt (but we have a Redaction prompt button for that purpose here).
 
 ## TODO:  
