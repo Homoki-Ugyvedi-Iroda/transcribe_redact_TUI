@@ -130,13 +130,14 @@ class CustomStdout:
 
 class MissingOpenAiApiKey(npyscreen.ActionForm):
     def create(self):
-        self.add(npyscreen.TitleText, name = ui_const.NAME_MISSINGOPENAIKEYDISPLAY_EN)
+        self.api_key_input = self.add(npyscreen.TitleText, name = ui_const.NAME_MISSINGOPENAIKEYDISPLAY_EN)
     def on_ok(self):
-        apikey = self.get.widget(0).value
+        apikey = self.api_key_input.value
         if not apikey or apikey.strip() == "":
             self.parentApp.setNextForm("MISSING_OPENAIAPIKEY")
         else:
             set_key('.env', "OPENAI_API_KEY", apikey)
+        self.parentApp.setNextForm("MAIN")
         
     def on_cancel(self):
         self.parentApp.setNextForm("MAIN")  

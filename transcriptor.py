@@ -11,7 +11,7 @@ MSG_STARTTRANSCRIPTION_EN = "Starting transcription... \n"
 MSG_TRANSCRIPTIONFINISHED_EN = "Transcription complete! \n"
 MSG_TRANSCRIPTINGMULTIPLE_EN = "Transcripting multiple files ({})... \n"
 MSG_TRANSCRIPTINGGSINGLE_EN = "Transcripting file: ({})... \n"
-MSG_TRANSCRIPTIONTIME_EN = "{:.2f}. transcription processing time for this file: {}"
+MSG_TRANSCRIPTIONTIME_EN = "Transcription processing time: {}"
 
 class TranscriptionView(BaseView, ViewInterface):
 
@@ -113,7 +113,8 @@ class TranscriptionPresenter:
             self.view.display_message_queue(MSG_STARTTRANSCRIPTION_EN)
             with redirect_stdout(CustomStdout(self.view.form.output_queue)):
                 self.model.transcribe(input_file, output_file)
-            time_difference = datetime.now() - start_time
+            end_time = datetime.now()
+            time_difference = end_time - start_time
             self.view.display_message_queue(MSG_TRANSCRIPTIONFINISHED_EN)
             self.view.display_message_queue(MSG_TRANSCRIPTIONTIME_EN.format(time_difference))
                     
