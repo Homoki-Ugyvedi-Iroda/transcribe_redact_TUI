@@ -17,11 +17,13 @@ python transcribe_redact_TUI.py
 
 This does not use the API, but the downloadable models, so for transcription, no data leaves your computer when using this application. There are different kinds of models available, but in Hungarian, only the biggest ("large") is usable, and even that is far from perfect. But large model gives much better results compared to e.g. what Google Cloud transcription services are able to provide currently in Hungarian.
 
+Problem with CUDA-based transcription is the complexity of drivers (e.g. a different driver might be needed for specific cards - more testing needed).
+
 The greatest is that these models are multilingual (there are English-only models, but they're out of the scope of this experiment.)
 
 You can try using CUDA-compatible GPUs on your computer for speeding up the transcription, if proper CUDA-drivers are installed. It really speeds up the results, but the memory size of the GPU will be a severe limiting factor.
 
-E.g. have a ten-year-old GeForce 750 Ti with 2 GB of RAM, and the medium model is too large for that.
+E.g. a ten-year-old GeForce 750 Ti with 2 GB of RAM is not enough for the medium model.
 
 See also:
 
@@ -59,6 +61,9 @@ There are two empty files in the /static folder that are not used in this applic
 
 ## TODO:  
 
+- [ ] check why initial_prompt is not working and whether it works the same from command prompt (e.g. encoding inappropriate?)
+- [ ] replace Cuda cb with timestamping option (for later merging of audio files separated per persons in discussions)
+- [ ] involvement of audio improvement/separation etc. chain?
 - [ ] A "PySimpleGUI" version?
 
 There are some npyscreen problems:

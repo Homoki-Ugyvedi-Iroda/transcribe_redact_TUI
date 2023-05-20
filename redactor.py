@@ -8,7 +8,7 @@ import npyscreen
 import ui_const
 
 MAX_TOKEN_LENGTHS = {
-    "gpt-4": 8192, #8192 is the proper value, but this is unusable in the afternoons in CEST timezone
+    "gpt-4": 8192, #8192 is the proper value, but this is unusable in the afternoons in CEST timezone, so we have a 
     "gpt-3.5-turbo": 4096
 }     
 SYSTEM_PROMPT_DEF = "You are a silent AI tool helping to format the long texts that were transcribed from speeches." \

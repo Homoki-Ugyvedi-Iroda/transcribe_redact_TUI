@@ -1,4 +1,4 @@
-from npyscreen import MultiLineEdit, BoxTitle, BufferPager
+from npyscreen import MultiLineEdit
 
 class EuMultiLineEdit(MultiLineEdit):
     def t_input_isprint(self, inp):

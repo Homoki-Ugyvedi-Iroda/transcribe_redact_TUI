@@ -1,7 +1,6 @@
 import os
 import openai
 import json
-#import util
 
 error_mapping = {
     openai.error.AuthenticationError: "The service is not accessible, please try again later! [Authentication Error]",
