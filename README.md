@@ -2,25 +2,24 @@
 
 This a simple TUI (using npyscreen) Python app for OpenAI's whisper model (=transcribing audio) and redaction w/ OpenAI GPT APIs.
 
-The objective was to make a tool that is accessible for experimentation for legal uses by solo lawyers and small law firms (by lawyers for lawyers).
+The objective was to make a tool that is accessible for experimentation for legal uses by solo lawyers and small law firms.
 
 On the first run of transcription, the app downloads models, that takes a LONG time and uses up lots of space (e.g. 2.7 GB for large model).
 
-Currently source code only, requires:
+Currently source code only. 
+
+After downloading this in a zip, make sure the following requirements are fulfilled:
 
 - Python 3.9.16 or later
-- 
-- conda (Miniconda suggested, https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe)
-- 
-Some of the libraries are Windows specific (e.g. windows-curses for npyscreen).
+- conda (I suggest the latest Miniconda, https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe)
+- Some of the libraries are Windows specific (e.g. windows-curses for npyscreen).
 
-After having installed the requirements, the following commands are needed.
+After having installed the requirements, the following commands are needed. Should the conda environment not be appropriate for some reasons, after conda, also run `pip install -r requirements.txt`
 
 ```
 conda env create -f environment.yml
 conda activate transcribe_redact_TUI
 conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch-nightly -c nvidia
-pip install -r requirements.txt
 python transcribe_redact_TUI.py
 ```
 
@@ -76,8 +75,6 @@ There are two empty files in the /static folder that are not used in this applic
 
 ## TODO:  
 
-- [ ] check why initial_prompt is not working and whether it works the same from command prompt (e.g. encoding inappropriate?)
-- [ ] replace Cuda cb with timestamping option (for later merging of audio files separated per persons in discussions)
 - [ ] involvement of audio improvement/separation etc. chain?
 - [ ] A "PySimpleGUI" version?
 
