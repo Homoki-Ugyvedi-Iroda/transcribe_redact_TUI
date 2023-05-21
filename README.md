@@ -16,16 +16,18 @@ Make sure the following requirements are fulfilled:
 
 After downloading this source in a zip (e.g. unzipping to directory e.g. "REDACT") or cloning by git, enter the directory in (Anaconda/Miniconda) CMD/Powershell, go to the unzipped directory.
 
-Enter the following commands (the first one could take 15-30 minutes!) Should the conda environment not be appropriate for some reasons, after the conda line, run also `pip install -r requirements.txt`. The third (pytorch) line takes also a long time, but can be omitted if you will not be using a GeForce graphics card for transcription ("**GPU**", see blow).
+Enter the following commands (the first one could take 15-20 minutes.) The third (pytorch) line takes also a long time.
 
 ```
 conda env create -f environment.yml 
 conda activate transcribe_redact_TUI
+pip install -r requirements.txt
+pip install --upgrade --no-deps --force-reinstall git+https://github.com/openai/whisper.git
 conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch-nightly -c nvidia
 python transcribe_redact_TUI.py
 ```
 
-(Should tiktoken raise any installation errors, just ignore it. If it does not run)
+If for some reasons, executing the first line takes a very long time (installation is stalled), and you have to cancel execution of the environment (e.g. Ctrl+C), you can recheck any missing packages with running `conda env update -f environment.yml`
 
 It will request the OpenAI API key upon start (see below), but if you don't want to use the redact feature, just press enter here.
 
