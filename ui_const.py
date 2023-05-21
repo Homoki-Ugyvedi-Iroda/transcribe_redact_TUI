@@ -28,7 +28,7 @@ HELP_TEXTFILEDISPLAY_EN = "This is a text file. If you transcribe, the output wi
 HELP_AUDIOFILEDISPLAY_EN = "This is the audio file of the formats accepted by Whisper that you wish to transcribe to text."
 HELP_TRYCUDA_EN = "If your computer has a GPU w/ 2GB+ RAM, and have proper drivers installed, you may " \
         "try to use that to speed up your transcription (but probably will not work...)." \
-        "~2 GB GPU was enough for small, ~10 GB needed for the large model. Tiny model is useless in most languages."
+        "~2 GB GPU was enough for small, ~10 GB needed for the large model. Tiny model is useless in most languages, but surprisingly good in English."
 HELP_GPT4CBOX_EN = "If your API key supports GPT-4, you can enable use of GPT-4. Although GPT-4 much slower, GPT-3.5 sometimes redacts in English, changing the original language and often ignores instructions." \
         "For this reason, with GPT-3.5, system prompt is included in user prompt."
 HELP_TIMESTAMP_EN = "Timestamping for transcribed lines (useful later for remerging diarised audios, e.g. separate audio files by different speakers of the same conversation)."
@@ -52,8 +52,8 @@ HELP_SETREDACTPROMPT_EN = "You may change the system prompt for the redaction (O
 NAME_TITLEFILENAME_EN = "Choose {} file:"
 MSG_PRESSTABTOBROWSE_EN = "Press TAB to browse files from the directory entered (ending with \\)"
 MSG_VALIDATEOUTPUT_OVERWRITE_EN = "The text file {} already exists. If you press 'Transcript', the new text will be appended to the existing text. Press Cancel if you don't want this."
-MSG_VALIDATEOUTPUTFILE_NOTWRITABLE_EN = "The text file {} is not writable. Please choose a different file or check permissions."
-MSG_DIRECTORYNOTWRITABLE_EN = "The directory {} is not writable. Please choose a different file or check permissions."
+MSG_VALIDATEOUTPUTFILE_NOTWRITABLE_EN = "The text file {} is not writable or does not exist. Please choose a different file or check permissions."
+MSG_DIRECTORYNOTWRITABLE_EN = "The directory {} is not writable or does not exist. Please choose a different file or check permissions."
 MSG_AUDIOTOOLARGE_EN = "The audio file size {} MB is longer than {} MB."
 MSG_SPLITAUDIO_EN = "Shall I split the audio file {} into the necessary chunk sizes and process the chunks?"
 MSG_FILENOTEXIST_EN = "The file {} does not exist."

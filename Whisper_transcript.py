@@ -23,9 +23,8 @@ class WhisperConverter:
 		try:
 			model = load_model(name=model_name, device=device)
 		except cuda.OutOfMemoryError:
-			raise RuntimeError(MSG_OUTOFMEMORY_EN)
 			model = load_model(name=model_name, device='cpu')
-
+			raise RuntimeError(MSG_OUTOFMEMORY_EN)
 		decode_options = {}
 		if language:
 			language=language[:2]
