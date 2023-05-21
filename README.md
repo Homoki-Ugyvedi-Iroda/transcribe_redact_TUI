@@ -4,8 +4,6 @@ This a simple TUI (using npyscreen) Python app for OpenAI's whisper model (=tran
 
 The objective was to make a tool that is accessible for experimentation for legal uses by solo lawyers and small law firms.
 
-On the first run of transcription, the app downloads models, that takes a LONG time and uses up lots of space (e.g. 2.7 GB for large model).
-
 Currently source code only. 
 
 Make sure the following requirements are fulfilled:
@@ -16,7 +14,7 @@ Make sure the following requirements are fulfilled:
 
 After downloading this source in a zip (e.g. unzipping to directory e.g. "REDACT") or cloning by git, enter the directory in (Anaconda/Miniconda) CMD/Powershell, go to the unzipped directory.
 
-Enter the following commands (the first one could take 15-20 minutes.) The third (pytorch) line takes also a long time.
+Enter the following commands (the first one could take 15-20 minutes). The first one will exit with a `CondaEnvException: Pip failed` error, that's why we need the third line. The fifth (pytorch) line will also takes several minutes.
 
 ```
 conda env create -f environment.yml 
@@ -29,7 +27,9 @@ python transcribe_redact_TUI.py
 
 If for some reasons, executing the first line takes a very long time (installation is stalled), and you have to cancel execution of the environment (e.g. Ctrl+C), you can recheck any missing packages with running `conda env update -f environment.yml`
 
-It will request the OpenAI API key upon start (see below), but if you don't want to use the redact feature, just press enter here.
+It will request the OpenAI API key upon start (see below), but if you don't want to use the redact feature, just press enter here or enter any value you want.
+
+The first transcription will take a many minutes longer time than later transcriptions, because the models first have to be downloaded (e.g. 2.7 GB for the large model).
 
 ## Experiences using the Whisper model
 
