@@ -186,7 +186,7 @@ class GptMaxTokenLengthButton:
     def __init__(self, form):
         self.form = form
     def create(self):
-        self.form.gpt_max_button = self.form.add(npyscreen.ButtonPress, name=ui_const.NAME_GPTMAXBUTTON_EN, rely=8, relx=60)
+        self.form.gpt_max_button = self.form.add(npyscreen.ButtonPress, name=ui_const.NAME_GPTMAXBUTTON_EN, rely=8, relx=50)
         self.form.gpt_max_button.whenPressed = self.switch_to_set_gpt_max_token_length
     def switch_to_set_gpt_max_token_length(self):
         self.form.parentApp.switchForm('MAXTOKENLENGTH')
