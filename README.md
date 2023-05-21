@@ -6,12 +6,27 @@ The objective was to make a tool that is accessible for experimentation for lega
 
 On the first run of transcription, the app downloads models, that takes a LONG time and uses up lots of space (e.g. 2.7 GB for large model).
 
-Currently source code only:
+Currently source code only, requires:
+
+- Python 3.9.16 or later
+- 
+- conda (Miniconda suggested, https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe)
+- 
+Some of the libraries are Windows specific (e.g. windows-curses for npyscreen).
+
+After having installed the requirements, the following commands are needed.
 
 ```
+conda env create -f environment.yml
+conda activate transcribe_redact_TUI
+conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch-nightly -c nvidia
 pip install -r requirements.txt
 python transcribe_redact_TUI.py
 ```
+
+(Should tiktoken raise any installation errors, just ignore it. If it does not run)
+
+It will request the OpenAI API key upon start (see below), but if you don't want to use the redact feature, just press enter here.
 
 ## Experiences using the Whisper model
 
