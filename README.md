@@ -14,7 +14,7 @@ Make sure the following requirements are fulfilled:
 
 After downloading this source in a zip (e.g. unzipping to directory e.g. "REDACT") or cloning by git, enter the directory in (Anaconda/Miniconda) CMD/Powershell, go to the unzipped directory.
 
-Enter the following commands (the first one could take 15-20 minutes). The first one will exit with a `CondaEnvException: Pip failed` error, that's why we need the third line. The fifth (pytorch) line will also takes several minutes.
+Enter the following commands (the first one could take 15-20 minutes). The first one will exit with a `CondaEnvException: Pip failed` error, that's why we need the third line. The fifth line (pytorch) will also takes several minutes.
 
 ```
 conda env create -f environment.yml 
@@ -29,7 +29,7 @@ If for some reasons, executing the first line takes a very long time (installati
 
 It will request the OpenAI API key upon start (see below), but if you don't want to use the redact feature, just press enter here or enter any value you want.
 
-The first transcription will take a many minutes longer time than later transcriptions, because the models first have to be downloaded (e.g. 2.7 GB for the large model).
+The first transcription may take many minutes longer time than later transcriptions, because the models first have to be downloaded (e.g. 2.7 GB for the large model). If you receive a `enforce fail at alloc_cpu.cpp:72 DefaultCPUAllocator not enough memory` error during the first run with large model (even without a GPU), exit the application, restart it, at it may run without any problem next time.
 
 ## Experiences using the Whisper model
 
