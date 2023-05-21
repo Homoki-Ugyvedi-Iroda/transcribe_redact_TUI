@@ -49,10 +49,10 @@ class RedactorView(BaseView, ViewInterface):
         self.presenter.handle_redaction()
         
     def update_visibility(self, visible: bool=None):
-        if visible is not None:
+        if visible:
             self.form.redact_button.hidden = not visible
         else:            
-            if self.form.output_file is not None:
+            if self.form.output_file:
                 self.form.redact_button.hidden = False
             else:
                 self.form.redact_button.hidden = True
@@ -210,8 +210,8 @@ class SetGptMaxTokenLength(npyscreen.ActionPopup):
     
     def get_gpt_max_token_length(self) -> int:
         current_model = self.parentApp.getForm("MAIN").current_model_config
-        if os.getenv("MAXTOKENLENGTH") is not None:
+        if os.getenv("MAXTOKENLENGTH"):
             length = int(os.getenv("MAXTOKENLENGTH"))
-            if length is not None:
+            if length:
                 return length        
         return MAX_TOKEN_LENGTHS[current_model]

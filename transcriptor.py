@@ -31,10 +31,10 @@ class TranscriptionView(BaseView, ViewInterface):
 
     def update_visibility(self, visible: bool=None):
         main_form=self.form.parentApp.getForm("MAIN")
-        if visible is not None:
+        if visible:
             self.form.transcriptor_button.hidden = not visible
         else:            
-            if main_form.input_file is not None and main_form.output_file is not None:
+            if main_form.input_file and main_form.output_file:
                 self.form.transcriptor_button.hidden = False
             else:
                 self.form.transcriptor_button.hidden = True
@@ -69,12 +69,12 @@ class TranscriptionModel:
         return initial_prompt
     
     def get_cuda(self) -> bool:
-        if self.view.form.cb_cuda.cuda_cb == True:
+        if self.view.form.cb_cuda.cuda_cb.value == True:
             return True
         return False 
     
-    def get_tb(self) -> bool:
-        if self.view.form.cb_tb.tb_cb == True:
+    def get_ts(self) -> bool:
+        if self.view.form.cb_ts.ts_cb.value == True:
             return True
         return False
     
@@ -85,7 +85,7 @@ class TranscriptionModel:
         model_name=self.get_model()
         initial_prompt=self.get_initial_prompt()
         cuda=self.get_cuda()
-        tb=self.get_tb()
+        timestamp=self.get_ts()
         '''max_size = ui_const.ACCEPTED_WHISPER_FILESIZE
                 if os.path.getsize(input_file) > max_size:
             if util.check_split_files_presence_under_input_file(input_file, max_size):
@@ -99,7 +99,7 @@ class TranscriptionModel:
         # But later, it could make sense to reinsert these provisions    
         '''   
         try:            
-            self.wh_transcriptor.whisper_convert(input_file, output_file, language=language, model_name=model_name, initial_prompt=initial_prompt, CUDA=cuda, tb=tb)
+            self.wh_transcriptor.whisper_convert(input_file, output_file, language=language, model_name=model_name, initial_prompt=initial_prompt, CUDA=cuda, ts=timestamp)
         except Exception as e:
             self.view.display_message_queue(str(e))
 
@@ -129,7 +129,7 @@ class TranscriptionPromptButton:
         self.form = form
     def create(self):
         selected_value = ui_const.NAME_INITIALPROMPT_EN
-        if os.getenv('INIT_PROMPT') is not None:
+        if os.getenv('INIT_PROMPT'):
             selected_value = ui_const.NAME_INITIALPROMPT_EN + "*"
         self.form.transcription_prompt_button = self.form.add(ButtonPress, name=selected_value, rely=6, relx=25)
         self.form.transcription_prompt_button.whenPressed = self.switch_to_initial_prompt_form        

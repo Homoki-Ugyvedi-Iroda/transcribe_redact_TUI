@@ -30,15 +30,15 @@ It will request the OpenAI API key upon start (see below), but if you don't want
 
 ## Experiences using the Whisper model
 
-This does not use the API, but the downloadable models, so for transcription, no data leaves your computer when using this application. There are different kinds of models available, but in Hungarian, only the biggest ("large") is usable, and even that is far from perfect. But large model gives much better results compared to e.g. what Google Cloud transcription services are able to provide currently in Hungarian.
+This does not use the API, but the downloadable models, so for transcription, no data leaves your computer when using this application. There are different kinds of models available, but for Hungarian, only the biggest ("large") is usable, and even that is far from perfect. In Hungarian, large model gives much better results compared to e.g. what Google Cloud transcription services are able to provide.
 
-Problem with CUDA-based transcription is the complexity of drivers (e.g. a different driver might be needed for specific cards - more testing needed).
+The drawbacks with CUDA-based transcription is the size and complexity of packages to install (pytorch may cause many other errors, needs more testing).
 
 The greatest is that these models are multilingual (there are English-only models, but they're out of the scope of this experiment.)
 
-You can try using CUDA-compatible GPUs on your computer for speeding up the transcription, if proper CUDA-drivers are installed. It really speeds up the results, but the memory size of the GPU will be a severe limiting factor.
+You can try using CUDA-compatible GPUs on your computer for speeding up the transcription, if proper CUDA-drivers are installed. It really speeds up the results, but the memory size of the GPU will be a severe limiting factor. E.g. a ten-year-old GeForce 750 Ti with 2 GB of RAM is not enough for the medium model.
 
-E.g. a ten-year-old GeForce 750 Ti with 2 GB of RAM is not enough for the medium model.
+The "transcription prompt" (which uses the initial prompt) does not seem to be very helpful at the moment. It should be a prompt, helping the model transcribe more precisely a list of words (vocabulary, e.g. proper nouns, technical terms etc.) in the audio.
 
 See also:
 

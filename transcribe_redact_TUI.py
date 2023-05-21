@@ -53,11 +53,7 @@ class MainForm(npyscreen.FormBaseNew):
         
         self.cb_cuda = CudaCheckbox(self)
         self.cb_cuda.create()
-        self.cuda_cb = self.cb_cuda.cuda_cb
-        
-        self.cb_tb = TimestampCheckbox(self)
-        self.cb_tb.create()
-        self.tb_cb = self.cb_tb.tb_cb
+        self.cuda_cb = self.cb_cuda.cuda_cb        
         
         self.gpt4_cb = Gpt4CheckBox(self)
         self.gpt4_cb.create()        
@@ -66,6 +62,9 @@ class MainForm(npyscreen.FormBaseNew):
         
         self.cb_gpt_max_token_length = GptMaxTokenLengthButton(self)
         self.cb_gpt_max_token_length.create()
+        
+        self.cb_ts = TimestampCheckbox(self)
+        self.cb_ts.create()
         
         self.output_handler = OutputHandler(self, self.output_queue)
         self.output_handler.create()          
