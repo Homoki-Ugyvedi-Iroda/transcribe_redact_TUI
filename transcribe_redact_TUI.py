@@ -6,7 +6,7 @@ import threading
 from queue import Queue
 import time
 import ui_const
-from misc_gui_setter import LanguageModelHandler, CudaCheckbox
+from misc_gui_setter import LanguageModelHandler, CudaCheckbox, TimestampCheckbox
 
 class MyApp(npyscreen.NPSAppManaged):
     def onStart(self):
@@ -54,6 +54,10 @@ class MainForm(npyscreen.FormBaseNew):
         self.cb_cuda = CudaCheckbox(self)
         self.cb_cuda.create()
         self.cuda_cb = self.cb_cuda.cuda_cb
+        
+        self.cb_tb = TimestampCheckbox(self)
+        self.cb_tb.create()
+        self.tb_cb = self.cb_tb.tb_cb
         
         self.gpt4_cb = Gpt4CheckBox(self)
         self.gpt4_cb.create()        

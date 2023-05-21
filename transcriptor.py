@@ -73,6 +73,11 @@ class TranscriptionModel:
             return True
         return False 
     
+    def get_tb(self) -> bool:
+        if self.view.form.cb_tb.tb_cb == True:
+            return True
+        return False
+    
     def transcribe(self, input_file: str, output_file: str):
         import Whisper_transcript
         self.wh_transcriptor = Whisper_transcript.WhisperConverter()
@@ -80,6 +85,7 @@ class TranscriptionModel:
         model_name=self.get_model()
         initial_prompt=self.get_initial_prompt()
         cuda=self.get_cuda()
+        tb=self.get_tb()
         '''max_size = ui_const.ACCEPTED_WHISPER_FILESIZE
                 if os.path.getsize(input_file) > max_size:
             if util.check_split_files_presence_under_input_file(input_file, max_size):
@@ -87,13 +93,13 @@ class TranscriptionModel:
                 self.view.display_message_queue(MSG_CONVERTINGMULTIPLE_EN.format(len(chunk_filenames)))
                 for filename in chunk_filenames:
                     self.view.display_message_queue(MSG_CONVERTINGSINGLE_EN.format(os.path.basename(filename)))
-                    self.wh_transcriptor.whisper_convert(filename, output_file, language=language, model_name=model_name, initial_prompt=initial_prompt, CUDA=cuda)
+                    self.wh_transcriptor.whisper_convert(filename, output_file, language=language, model_name=model_name, initial_prompt=initial_prompt, CUDA=cuda, tb=tb)
         else: 
         # We omitted the size checking code above, because offline Whisper works with 25MB+ files as well. Current limit seems to depend on GPU/CPU etc. so not using it.
         # But later, it could make sense to reinsert these provisions    
         '''   
         try:            
-            self.wh_transcriptor.whisper_convert(input_file, output_file, language=language, model_name=model_name, initial_prompt=initial_prompt, CUDA=cuda)
+            self.wh_transcriptor.whisper_convert(input_file, output_file, language=language, model_name=model_name, initial_prompt=initial_prompt, CUDA=cuda, tb=tb)
         except Exception as e:
             self.view.display_message_queue(str(e))
 

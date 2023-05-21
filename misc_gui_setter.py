@@ -109,10 +109,28 @@ class CudaCheckbox:
         else:
             checkbox_value_bool = False
         self.cuda_cb = self.form.add(npyscreen.Checkbox, name=ui_const.NAME_CUDACBOX_EN, value=checkbox_value_bool, help = ui_const.HELP_TRYCUDA_EN, relx=4, max_width=23, rely=8, max_height=1)
-        self.cuda_cb.whenToggled = self.update_cuda_cb_save_to_env
+        self.cuda_cb.whenToggled = self.update_cb_save_to_env
     
-    def update_cuda_cb_save_to_env(self):
+    def update_cb_save_to_env(self):
         if self.cuda_cb.value:
             set_key(".env", "CUDA", "True")
         else:
             set_key(".env", "CUDA", "False")
+            
+class TimestampCheckbox:    
+    def __init__(self, form):
+        self.form = form
+    def create(self):        
+        checkbox_value_str = os.getenv("TIMESTAMP")
+        if checkbox_value_str == "True":
+            checkbox_value_bool = True
+        else:
+            checkbox_value_bool = False
+        self.ts_cb = self.form.add(npyscreen.Checkbox, name=ui_const.NAME_TIMESTAMP_EN, value=checkbox_value_bool, help = ui_const.HELP_TIMESTAMP_EN, relx=70, max_width=23, rely=8, max_height=1)
+        self.ts_cb.whenToggled = self.update_cb_save_to_env
+    
+    def update_cb_save_to_env(self):
+        if self.ts_cb.value:
+            set_key(".env", "TIMESTAMP", "True")
+        else:
+            set_key(".env", "TIMESTAMP", "False")

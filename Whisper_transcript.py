@@ -5,7 +5,7 @@ from tiktoken import get_encoding
 
 class WhisperConverter:    
 	
-	def whisper_convert(self, input_file: str, output_file: str, language: str='', initial_prompt: str='', model_name: str="large", CUDA: bool=False):
+	def whisper_convert(self, input_file: str, output_file: str, language: str='', initial_prompt: str='', model_name: str="large", CUDA: bool=False, tb: bool=False):
 		"""
 	    Converts the input file to a text.
 	    :input_file: the filename of the input audio file to convert.
@@ -29,12 +29,10 @@ class WhisperConverter:
 			language=language[:2]
 			decode_options.update({"language": language})
 		if initial_prompt is not None:
-			encoding = get_encoding("cl100k_base")
-			prompt_tokenized = encoding.encode(initial_prompt)
-			decode_options.update({"prompt": prompt_tokenized})
+			decode_options.update({"prompt": initial_prompt})
 
 		try:			
-			result = model.transcribe(audio=input_file, word_timestamps=False, verbose=True, **decode_options) 
+			result = model.transcribe(audio=input_file, word_timestamps=tb, verbose=True, **decode_options) 
 		except Exception as e:
 			raise TranscribeOutOfMemory()
 
