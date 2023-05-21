@@ -37,11 +37,11 @@ This does not use the API, but the downloadable models, so for transcription, no
 
 The drawbacks with CUDA-based transcription is the size and complexity of packages to install (pytorch may cause many other errors, needs more testing).
 
-The greatest is that these models are multilingual (there are English-only models, but they're out of the scope of this experiment.)
+The greatest in Whisper is that these models are multilingual (there are English-only models, but they're out of the scope of this experiment.)
 
-You can try using CUDA-compatible GPUs on your computer for speeding up the transcription, if proper CUDA-drivers are installed. It really speeds up the results, but the memory size of the GPU will be a severe limiting factor. E.g. a ten-year-old GeForce 750 Ti with 2 GB of RAM is not enough for the medium model.
+You can try using CUDA-compatible GPUs on your computer for speeding up the transcription (if latest drivers are installed). It really speeds up the results, but the memory size of the GPU will be a severe limiting factor. E.g. a ten-year-old GeForce 750 Ti with 2 GB of RAM is not enough for the medium model, which is not a problem when using CPU for transcription.
 
-The "transcription prompt" (which uses the initial prompt) does not seem to be very helpful at the moment. It should be a prompt, helping the model transcribe more precisely a list of words (vocabulary, e.g. proper nouns, technical terms etc.) in the audio.
+The "transcription prompt" (using the `initial prompt` of Whisper) is just mildly useful. It may help the model in transcribing more precisely a specific list of words in the audio (vocabulary, e.g. proper nouns like persons' or organisations' names, technical terms etc.).
 
 See also:
 
@@ -53,9 +53,9 @@ See also:
 
 ## Using OpenAI GPT for redaction
 
-Rename .env.sample to .env and insert your OpenAI API key to be able to use the OpenAI GPT redaction "service".
+Rename `.env.sample` to `.env` and insert your OpenAI API key to be able to use the OpenAI GPT redaction "service". Or just enter the OpenAI key during first start (this is not really recommended, it's better just to copy it into the `.env` file).
 
-You can ask for an OpenAI API key by registering at OpenAI, see https://platform.openai.com/account/api-keys. Keys are very cheap, but do cost money and will need a credit card. Annoying 
+You can ask for an OpenAI API key by registering at OpenAI, see https://platform.openai.com/account/api-keys. Keys are very cheap, but do cost money and will need a credit card.
 
 If your API key supports GPT-4, you can enable use of GPT-4 for redaction.
 
