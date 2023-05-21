@@ -8,16 +8,18 @@ On the first run of transcription, the app downloads models, that takes a LONG t
 
 Currently source code only. 
 
-After downloading this in a zip, make sure the following requirements are fulfilled:
+Make sure the following requirements are fulfilled:
 
 - Python 3.9.16 or later
 - conda (I suggest the latest Miniconda, https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe)
 - Some of the libraries are Windows specific (e.g. windows-curses for npyscreen).
 
-After having installed the requirements, the following commands are needed. Should the conda environment not be appropriate for some reasons, after conda, also run `pip install -r requirements.txt`
+After downloading this source in a zip (e.g. unzipping to directory e.g. "REDACT") or cloning by git, enter the directory in (Anaconda/Miniconda) CMD/Powershell, go to the unzipped directory.
+
+Enter the following commands (the first one could take 15-30 minutes!) Should the conda environment not be appropriate for some reasons, after the conda line, run also `pip install -r requirements.txt`. The third (pytorch) line takes also a long time, but can be omitted if you will not be using a GeForce graphics card for transcription ("**GPU**", see blow).
 
 ```
-conda env create -f environment.yml
+conda env create -f environment.yml 
 conda activate transcribe_redact_TUI
 conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch-nightly -c nvidia
 python transcribe_redact_TUI.py
@@ -75,7 +77,9 @@ There are two empty files in the /static folder that are not used in this applic
 
 ## TODO:  
 
-- [ ] involvement of audio improvement/separation etc. chain?
+- [ ] create an easier to use installation version (*Poetry*)
+- [ ] create a version that uses only CPU (less requirements, smaller installation, distributable version)
+- [ ] chaining of audio improvements (similar to Adobe Audition), separation (diarisation) of speakers, and solutionsfor merging documents, redrafting prompts etc.
 - [ ] A "PySimpleGUI" version?
 
 There are some npyscreen problems:
