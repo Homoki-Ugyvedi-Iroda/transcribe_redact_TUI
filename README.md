@@ -29,7 +29,7 @@ If for some reasons, executing the first line takes a very long time (installati
 
 It will request the OpenAI API key upon start (see below), but if you don't want to use the redact feature, just press enter here or enter any value you want.
 
-The first transcription may take many minutes longer time than later transcriptions, because the models first have to be downloaded (e.g. 2.7 GB for the large model). If you receive a `enforce fail at alloc_cpu.cpp:72 DefaultCPUAllocator not enough memory` error during the first run with large model (even without a GPU), exit the application, restart it, at it may run without any problem next time.
+Starting the first transcription may take longer time than later transcriptions. If you receive a `enforce fail at alloc_cpu.cpp:72 DefaultCPUAllocator not enough memory` error during the first run with large model (even without a GPU), exit the application, restart it, at it may run without any problem next time.
 
 ## Experiences using the Whisper model
 
