@@ -12,7 +12,7 @@ MAX_TOKEN_LENGTHS = {
     "gpt-3.5-turbo": 4096
 }     
 SYSTEM_PROMPT_DEF = "You are a silent AI tool helping to format the long texts that were transcribed from speeches." \
-    "You format the text follows: you break up the text into paragraphs, correct and redact. You may receive the text in multiple batches." \
+    "You format the text follows: you break up the text into paragraphs, correct the text for spelling errors. You may receive the text in multiple batches." \
     " Do not include your own text in the response, and use the original language of the text."
 REQUEST_TIMEOUT = 600
 

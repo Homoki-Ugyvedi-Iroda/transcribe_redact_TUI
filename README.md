@@ -73,6 +73,8 @@ This makes such use often impractical, and requires rewriting the original instr
 
 Also, due to ignoring system prompts, with GPT-3.5, system prompt is included in user prompt instead, but still tends to ignore it.
 
+If you do not give any redaction prompt, there is a default system prompt ("You are a silent AI tool helping to format the long texts that were transcribed from speeches. You format the text follows: you break up the text into paragraphs, correct the text for spelling errors. You may receive the text in multiple batches. Do not include your own text in the response, and use the original language of the text.")
+
 There are two empty files in the /static folder that are not used in this application: 
 
 - prompt_qa_examples.json could be used for chat examples to submit to the LLM (not really useful for the redaction purpose, so not used in the application),
@@ -86,6 +88,6 @@ There are two empty files in the /static folder that are not used in this applic
 - [ ] chaining of audio improvements (similar to Adobe Audition), separation (diarisation) of speakers, and solutionsfor merging documents, redrafting prompts etc.
 - [ ] A "PySimpleGUI" version?
 
-There are some npyscreen problems:
-- non-ASCII characters cannot be entered via keyboard (self._last_get_ch_was_unicode always returns false for non-ascii, had to be overriden)
+There are some npyscreen (or windows_curses?) specific problems:
+- non-ASCII characters cannot be entered via keyboard (self._last_get_ch_was_unicode always returns false for non-ascii), even after overwriting, certain characters from certain keyboards fail to appear on screen (e.g. Hungarian "áÁúÚ" from keyboard, even if the same characters are available when using e.g. Slovak keyboard layout.) Workaround by manually editing `.env` file and enter the required prompt.
 - user cannot reach button helps (F1 does not work with active buttons, only w/ forms)
