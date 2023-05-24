@@ -31,7 +31,7 @@ It will request the OpenAI API key upon start (see below), but if you don't want
 
 Starting the first transcription may take longer time than later transcriptions.
 
-If you receive a `enforce fail at alloc_cpu.cpp:72 DefaultCPUAllocator not enough memory` error during the first run with **large** model (even without a GPU), **exit the application**, restart it, at it may run without any problem next time.
+If you receive a `enforce fail at alloc_cpu.cpp:72 DefaultCPUAllocator not enough memory` error during the first run with **large** model (even without a GPU), **exit the application**, restart it, and it may run without any problem next time.
 
 ## Experiences using the Whisper model
 
