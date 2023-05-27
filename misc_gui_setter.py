@@ -29,7 +29,7 @@ LANGUAGE_LIST = ["Bulgarian | bg",
 LANGUAGE_LIST.insert(0, ui_const.NAME_DETECTLANGUAGEVALUE_EN)
 MODEL_LIST = ["Tiny model","Base model","Small model","Medium model","Large model"]
 
-def get_env_value(env_name: str, default_name: str) -> str:
+def get_lang_model_env_value(env_name: str, default_name: str) -> str:
     if os.getenv(env_name) is not None:
         return os.getenv(env_name)
     return default_name
@@ -49,7 +49,7 @@ class ChooseLanguageButton:
         self.parentApp = form.parentApp
     
     def create(self):
-        selected_value = get_env_value("LANG", LANGUAGE_LIST[0])
+        selected_value = get_lang_model_env_value("LANG", LANGUAGE_LIST[0])
         self.language_button = self.form.add(npyscreen.ButtonPress, name=selected_value, rely = 7, relx=50)        
         self.language_button.whenPressed = self.switch_to_choose_language_form
 
@@ -59,7 +59,7 @@ class ChooseLanguageButton:
 class ChooseLanguageForm(npyscreen.Popup):
     def create(self):
         values = LANGUAGE_LIST
-        selected_value = get_env_value("LANG", LANGUAGE_LIST[0])
+        selected_value = get_lang_model_env_value("LANG", LANGUAGE_LIST[0])
         selected_index = values.index(selected_value) if selected_value in values else 0
         self.language_select = self.add(npyscreen.TitleSelectOne, values=values, name=ui_const.NAME_CHOOSELANGUAGE_EN, value = [selected_index], scroll_exit=True, help=ui_const.HELP_CHOOSELANGUAGE_EN)
     def afterEditing(self):
@@ -76,7 +76,7 @@ class ChooseModelButton:
         self.parentApp = form.parentApp
     
     def create(self):
-        selected_value = get_env_value("MODEL", MODEL_LIST[len(MODEL_LIST)-1])
+        selected_value = get_lang_model_env_value("MODEL", MODEL_LIST[len(MODEL_LIST)-1])
         self.model_button = self.form.add(npyscreen.ButtonPress, name=selected_value, rely=7, relx=70)
         self.model_button.whenPressed = self.switch_to_choose_model_form
     
@@ -87,7 +87,7 @@ class ChooseModelButton:
 class ChooseModelForm(npyscreen.Popup):
     def create(self):
         values = MODEL_LIST
-        selected_value = get_env_value("MODEL", MODEL_LIST[len(MODEL_LIST)-1])
+        selected_value = get_lang_model_env_value("MODEL", MODEL_LIST[len(MODEL_LIST)-1])
         selected_index = values.index(selected_value) if selected_value in values else 0
         self.model_select = self.add(npyscreen.TitleSelectOne, values=values, name=ui_const.NAME_CHOOSEMODEL_EN, value = [selected_index], scroll_exit=True, help=ui_const.HELP_CHOOSEMODEL_EN)
 

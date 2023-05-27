@@ -100,11 +100,12 @@ class RedactorPresenter:
         self.model = RedactorModel(view)
         
     def handle_redaction(self): 
-        output_file = self.view.form.output_file_display.value        
-        token_max_length = int(os.getenv("MAXTOKENLENGTH"))
-        if token_max_length is None:
-            token_max_length = 3999
-        start_time = datetime.datetime.now()
+        output_file = self.view.form.output_file_display.value
+        token_max_length = os.getenv("MAXTOKENLENGTH")
+        if token_max_length is None or not token_max_length.isdigit:
+            token_max_length = SetGptMaxTokenLength.get_default_token_length_number(self.view.form.current_model_config)
+        else:
+            token_max_length = int(token_max_length)
         redacted_text = self.model.redact(output_file, self.view.api_key, self.view.form.current_model_config, token_max_length, ratio_of_total_max_prompt) 
         if redacted_text == "":
             return
@@ -194,24 +195,36 @@ class GptMaxTokenLengthButton:
 class SetGptMaxTokenLength(npyscreen.ActionPopup):
     def create(self):        
         import ui_const
-        self.add(npyscreen.Textfield, name = ui_const.NAME_GPTMAXLENGTHINPUT_EN, begin_entry_at=0, value=str(self.get_gpt_max_token_length()), max_width=6, max_height=1)        
+        self.add(npyscreen.Textfield, name = ui_const.NAME_GPTMAXLENGTHINPUT_EN, begin_entry_at=0, value=str(self.get_gpt_max_token_length_from_env()), max_width=6, max_height=1)        
+    
     def on_ok(self):
-        current_model = self.parentApp.getForm("MAIN").current_model_config        
+        current_model = self.parentApp.getForm("MAIN").current_model_config
         input_value = self.get_widget(0).value
         if input_value.isdigit():
-            input_value = int(input_value)
-            if input_value > MAX_TOKEN_LENGTHS[current_model]:
-                input_value = MAX_TOKEN_LENGTHS[current_model]
+            input_value = SetGptMaxTokenLength.get_max_token_length_number(value=input_value, current_model=current_model)
             set_key('.env', "MAXTOKENLENGTH", str(input_value))
             self.parentApp.switchFormPrevious()
                 
     def on_cancel(self):
         self.parentApp.switchFormPrevious()
     
-    def get_gpt_max_token_length(self) -> int:
+    def get_gpt_max_token_length_from_env(self) -> int:
         current_model = self.parentApp.getForm("MAIN").current_model_config
-        if os.getenv("MAXTOKENLENGTH"):
-            length = int(os.getenv("MAXTOKENLENGTH"))
-            if length:
-                return length        
-        return MAX_TOKEN_LENGTHS[current_model]
+        length = os.getenv("MAXTOKENLENGTH")
+        if length.isdigit:
+                SetGptMaxTokenLength.get_max_token_length_number(length, current_model=current_model)
+                return length
+        return SetGptMaxTokenLength.get_default_token_length_number(current_model)
+
+    @staticmethod
+    def get_max_token_length_number(value, current_model) -> int:
+        value = int(value)
+        if value > MAX_TOKEN_LENGTHS[current_model]:
+            value = MAX_TOKEN_LENGTHS[current_model]
+        elif value < 0:
+            value = 500
+        return value
+    
+    @staticmethod
+    def get_default_token_length_number(current_model) -> int:
+        return int(MAX_TOKEN_LENGTHS[current_model]*3/4)

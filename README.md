@@ -9,23 +9,17 @@ Currently source code only.
 Make sure the following requirements are fulfilled:
 
 - Python 3.9.16 or later
-- conda (I suggest the latest Miniconda, https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe)
-- Some of the libraries are Windows specific (e.g. windows-curses for npyscreen).
+- This is a Windows specific version, relying on `windows_curses` package (but you can try with ).
 
-After downloading this source in a zip (e.g. unzipping to directory e.g. "REDACT") or cloning by git, enter the directory in (Anaconda/Miniconda) CMD/Powershell, go to the unzipped directory.
+After downloading this source in a zip (e.g. unzipping to directory e.g. "REDACT") or cloning by git, go to the unzipped directory. Of course, best practice is to create a virtual environment before installing with `venv`, but if you don't know what a venv is, don't use it just for this module.
 
-Enter the following commands (the first one could take 15-20 minutes). The first one will exit with a `CondaEnvException: Pip failed` error, that's why we need the third line. The fifth line (pytorch) will also takes several minutes.
+Installing the packages could take 15-20 minutes.
 
 ```
-conda env create -f environment.yml 
-conda activate transcribe_redact_TUI
+pip install --upgrade pip
 pip install -r requirements.txt
-pip install --upgrade --no-deps --force-reinstall git+https://github.com/openai/whisper.git
-conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch-nightly -c nvidia
 python transcribe_redact_TUI.py
 ```
-
-If for some reasons, executing the first line takes a very long time (installation is stalled), and you have to cancel execution of the environment (e.g. Ctrl+C), you can recheck any missing packages with running `conda env update -f environment.yml`
 
 It will request the OpenAI API key upon start (see below), but if you don't want to use the redact feature, just press enter here or enter any value you want.
 
@@ -41,7 +35,7 @@ The drawbacks with CUDA-based transcription is the size and complexity of packag
 
 The greatest in Whisper is that these models are multilingual (there are English-only models, but they're out of the scope of this experiment.)
 
-You can try using CUDA-compatible GPUs on your computer for speeding up the transcription (if latest drivers are installed). It really speeds up the results, but the memory size of the GPU will be a severe limiting factor. E.g. a ten-year-old GeForce 750 Ti with 2 GB of RAM is not enough for the medium model, which is not a problem when using CPU for transcription.
+You can try using CUDA-compatible GPUs on your computer for speeding up the transcription (if latest drivers are installed). It really speeds up the results, but the memory size of the GPU will be a severe limiting factor. E.g. a ten-year-old GeForce 750 Ti with 2 GB of RAM is not enough for the medium model, which is not a problem when using CPU for transcription. Check the *Try-CUDA* button, if you have it installed. (If you don't have a GPU installed with proper drivers, and you still check this *Try-CUDA* button, you will get an error message in the output box when the actual transcription starts, so no big deal.)
 
 The "transcription prompt" (using the `initial prompt` of Whisper) is just mildly useful. It may help the model in transcribing more precisely a specific list of words in the audio (vocabulary, e.g. proper nouns like persons' or organisations' names, technical terms etc.).
 
@@ -65,7 +59,7 @@ If your API key supports GPT-4, you can enable use of GPT-4 for redaction.
 
 Even if they advertise 32K token lengths (for input and output), I cannot even use 8K tokens for input, especially in the afternoon CEST. Even with a timeout, the requests are charged!
 
-I had more success with 3K token, so that's set in the application as well.
+I had more success with 3000 token, so that's set in the application as default (if no value is given). You can experiment with the proper token length if you want (using the *Max token length* button). When entering the dialogue box to enter the max token length, the length will be based on the official maximum length of 8K for GPT4 or 4K for GPT3.5.
 
 *Cons of GPT-3.5*: This provides output in the language of the prompt (the current system prompt is used in English), even if the instructions are made to provide responses in the language of the source, not the instruction.
 
@@ -83,8 +77,6 @@ There are two empty files in the /static folder that are not used in this applic
 
 ## TODO:  
 
-- [ ] create an easier to use installation version (just pip install -r should be enough, do not deal with NVIDIA pytorch etc.)
-- [ ] create a version that uses only CPU (less requirements, smaller installation, distributable version)
 - [ ] chaining of audio improvements (similar to Adobe Audition), separation (diarisation) of speakers, and solutionsfor merging documents, redrafting prompts etc.
 - [ ] A "PySimpleGUI" version?
 
