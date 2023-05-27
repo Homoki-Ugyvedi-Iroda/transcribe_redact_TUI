@@ -57,9 +57,9 @@ If your API key supports GPT-4, you can enable use of GPT-4 for redaction.
 
 *Cons of using GPT-4*: It is much slower than GPT-3.5.
 
-Even if they advertise 32K token lengths (for input and output), I cannot even use 8K tokens for input, especially in the afternoon CEST. Even with a timeout, the requests are charged!
+Even if they advertise 32K token lengths (for input and output), I cannot even use 8K tokens for input, especially in the afternoon CEST. Please take note that all API calls received are charged, even those that fail.
 
-I had more success with 3000 token, so that's set in the application as default (if no value is given). You can experiment with the proper token length if you want (using the *Max token length* button). When entering the dialogue box to enter the max token length, the length will be based on the official maximum length of 8K for GPT4 or 4K for GPT3.5.
+I had more success with 3000 token, so that's set in the application as default (if no value is given with GPT-4, otherwise it's 3/4 of the max length of the model). You can experiment with the proper token length if you want (using the *Max token length* button).
 
 *Cons of GPT-3.5*: This provides output in the language of the prompt (the current system prompt is used in English), even if the instructions are made to provide responses in the language of the source, not the instruction.
 
