@@ -1,6 +1,6 @@
 # transcribe_redact_TUI
 
-This a simple TUI (using npyscreen) Python app for OpenAI's whisper model (=transcribing audio) and redaction w/ OpenAI GPT APIs.
+This a simple TUI (using npyscreen) Python app for OpenAI's whisper model (=transcribing audio) and to experiment with the redaction capabilities of OpenAI GPT APIs (by automated chunking at sentence borders and message lengths set in the application).
 
 The objective was to make a tool that is accessible for experimentation for legal uses by solo lawyers and small law firms.
 
