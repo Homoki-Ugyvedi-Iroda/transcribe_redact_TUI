@@ -77,8 +77,6 @@ There are two empty files in the /static folder that are not used in this applic
 
 ## TODO:  
 
-- [ ] create an easier to use installation version (just pip install -r should be enough, do not deal with NVIDIA pytorch etc.)
-- [ ] create a version that uses only CPU (less requirements, smaller installation, distributable version)
 - [ ] chaining of audio improvements (similar to Adobe Audition), separation (diarisation) of speakers, and solutionsfor merging documents, redrafting prompts etc.
 - [ ] A "PySimpleGUI" version?
 
