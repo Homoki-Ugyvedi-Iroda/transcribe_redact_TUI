@@ -227,4 +227,6 @@ class SetGptMaxTokenLength(npyscreen.ActionPopup):
     
     @staticmethod
     def get_default_token_length_number(current_model) -> int:
+        if current_model=="gpt-4":
+            return 3000
         return int(MAX_TOKEN_LENGTHS[current_model]*3/4)
