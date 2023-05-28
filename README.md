@@ -9,7 +9,7 @@ Currently source code only.
 Make sure the following requirements are fulfilled:
 
 - Python 3.9.16 or later
-- This is a Windows specific version, relying on `windows_curses` package (but you can try with ).
+- This is a Windows specific version, relying on `windows_curses` package.
 
 After downloading this source in a zip (e.g. unzipping to directory e.g. "REDACT") or cloning by git, go to the unzipped directory. Of course, best practice is to create a virtual environment before installing with `venv`, but if you don't know what a venv is, don't use it just for this module.
 
@@ -39,6 +39,8 @@ You can try using CUDA-compatible GPUs on your computer for speeding up the tran
 
 The "transcription prompt" (using the `initial prompt` of Whisper) is just mildly useful. It may help the model in transcribing more precisely a specific list of words in the audio (vocabulary, e.g. proper nouns like persons' or organisations' names, technical terms etc.).
 
+It's strange that the conversion time for the large model in English is about the same as the medium model in Hungarian:
+
 See also:
 
 1. the Whisper [OpenAI paper](https://cdn.openai.com/papers/whisper.pdf) for more technical details,
@@ -57,9 +59,9 @@ If your API key supports GPT-4, you can enable use of GPT-4 for redaction.
 
 *Cons of using GPT-4*: It is much slower than GPT-3.5.
 
-Even if they advertise 32K token lengths (for input and output), I cannot even use 8K tokens for input, especially in the afternoon CEST. Please take note that all API calls received are charged, even those that fail.
+Even if they advertise 32K token lengths (for input and output), I cannot even use 8K tokens for input, especially in the afternoon CEST. Please take note that all API calls received are charged, even those that fail. This is not a problem specific to my use, see a bunch of similar complaints [here](https://community.openai.com/t/gpt-4-api-gateway-timeout-for-long-requests-but-billed-anyway/177214/38).
 
-I had more success with 3000 token, so that's set in the application as default (if no value is given with GPT-4, otherwise it's 3/4 of the max length of the model). You can experiment with the proper token length if you want (using the *Max token length* button).
+I had more success with 3000 token, so that's what I suggest (if no value is given with GPT-4, otherwise it's 3/4 of the max length of the model). You can experiment with the proper token length if you want (using the *Max token length* button).
 
 *Cons of GPT-3.5*: This provides output in the language of the prompt (the current system prompt is used in English), even if the instructions are made to provide responses in the language of the source, not the instruction.
 
