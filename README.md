@@ -41,6 +41,14 @@ The "transcription prompt" (using the `initial prompt` of Whisper) is just mildl
 
 It's strange that the conversion time for the large model in English is about the same as the medium model in Hungarian:
 
+Some benchmarks so far:
+
+audio length|transcription length|HW|model|lang|WER|transcript. time multipl.
+|--|--|--|--|--|--|--|
+0:33:22|0:53:54|CPU,i5-10500, 16 GB|medium|Hungarian|11.36%|1.62
+0:33:22|1:41:03|CPU,i5-10500, 16 GB|large|Hungarian|13.63%|3.03
+0:48:56|1:19:09|CPU,i5-10500, 16 GB|large|English|N/A|1.62
+
 See also:
 
 1. the Whisper [OpenAI paper](https://cdn.openai.com/papers/whisper.pdf) for more technical details,
