@@ -11,9 +11,11 @@ MAX_TOKEN_LENGTHS = {
     "gpt-4": 8192, #8192 is the proper value, but this is unusable in the afternoons in CEST timezone, so we have a 
     "gpt-3.5-turbo": 4096
 }     
-SYSTEM_PROMPT_DEF = "You are a silent AI tool helping to format the long texts that were transcribed from speeches." \
-    "You format the text follows: you break up the text into paragraphs, correct the text for spelling errors. You may receive the text in multiple batches." \
-    " Do not include your own text in the response, and use the original language of the text."
+SYSTEM_PROMPT_DEF = "You are a silent AI tool helping to format the long texts that were transcribed from speeches. " \
+    "You format the text follows: you break up the text into paragraphs where new topic is discussed or where that would otherwise help easier reading, and correct the text for spelling errors, delete any repetitions. " \
+    "You may receive the text in multiple batches. " \
+    "Do not include your own text in the response, and use the original language of the text."
+
 REQUEST_TIMEOUT = 600
 
 
