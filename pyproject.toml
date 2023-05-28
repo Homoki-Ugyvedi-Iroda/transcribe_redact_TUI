@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "Transcribe-Redact-TUI"
+version = "0.9"
+description = "This a simple TUI (using npyscreen) Python app for OpenAI's whisper model to transcribe audio and to experiment with the redaction capabilities of OpenAI GPT APIs."
+readme = "README.md"
+authors = [
+    {name = "Peter Homoki", email = "office@homoki.net"},
+]
+
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.9",
+    "Operating System :: Microsoft :: Windows",
+    "Environment :: Console",
+    "Intended Audience :: Lawyers",
+]
+
+keywords = ["transcribe", "redact", "text user interface", "lawyer"]
+
+[options]
+zip_safe = true
+install_requires = [
+    "npyscreen",
+    "windows_curses",
+    "chardet",
+    "pydub",
+    "python-dotenv",
+    "numba",
+    "openai",
+    "openai-whisper",
+]
